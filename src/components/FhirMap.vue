@@ -74,6 +74,46 @@ export default {
         }
       });
 
+      // Polygon layer
+      this.map.addLayer({
+        id: source + "-polygon",
+        type: "fill",
+        source: source,
+        layout: {},
+        paint: {
+          "fill-color": DEFAULT_COLOR,
+          "fill-opacity": 0.8,
+          "fill-outline-color": "black"
+        },
+        filter: [
+          "all",
+          ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false]
+        ]
+      });
+
+      // Line layer
+      this.map.addLayer({
+        id: source + "-line",
+        type: "line",
+        source: source,
+        layout: {},
+        paint: {
+          "line-color": DEFAULT_COLOR,
+          "line-opacity": 0.8,
+          "line-width": 1
+        },
+        filter: [
+          "all",
+          [
+            "match",
+            ["geometry-type"],
+            ["LineString", "MultiLineString"],
+            true,
+            false
+          ]
+        ]
+      });
+
       // Point layer
       this.map.addLayer({
         id: source + "-points",
@@ -113,53 +153,61 @@ export default {
       let features = [];
 
       if (payload.entry) {
-        for (let i = 0; i < payload.entry.length; i++) {
-          const entry = payload.entry[i];
+        payload.entry.forEach(entry => {
+          let hasGeojsonExtension = false;
+
           const resource = entry.resource;
 
-          // const feature = {
-          //   type: "Feature",
-          //   geometry: {
-          //     type: "Point",
-          //     coordinates: [
-          //       resource.position.longitude,
-          //       resource.position.latitude
-          //     ]
-          //   },
-          //   properties: {
-          //     name: resource.name
-          //   }
-          // };
-          //
-          // features.push(feature);
-
+          // Use geojson if exists
           resource.extension.forEach(extension => {
             if (
               extension.url ===
               "http://hl7.org/fhir/StructureDefinition/location-boundary-geojson"
             ) {
-              const data = extension.valueAttachment.data;
+              try {
+                const data = extension.valueAttachment.data;
 
-              if (data) {
+                if (data) {
+                  const geometry = JSON.parse(window.atob(data));
 
-                const geometry = JSON.parse(window.atob(data));
+                  const feature = {
+                    type: "Feature",
+                    geometry: geometry,
+                    properties: {
+                      name: resource.name || ''
+                    }
+                  };
 
-                const feature = {
-                  type: "Feature",
-                  geometry: geometry,
-                  properties: {
-                    name: resource.name
-                  }
-                };
+                  features.push(feature);
 
-                features.push(feature);
+                  hasGeojsonExtension = true;
+                }
+              } catch (e) {
+                hasGeojsonExtension = false;
               }
             }
           });
-        }
-      }
 
-      console.log(features);
+          // Else fall back on the position data if it exists, otherwise do not map the location
+          if (!hasGeojsonExtension && resource.position != null && resource.position.longitude != null  && resource.position.latitude != null) {
+            const feature = {
+              type: "Feature",
+              geometry: {
+                type: "Point",
+                coordinates: [
+                  resource.position.longitude,
+                  resource.position.latitude
+                ]
+              },
+              properties: {
+                name: resource.name || ''
+              }
+            };
+
+            features.push(feature);
+          }
+        });
+      }
 
       return { type: "FeatureCollection", features: features };
     }
