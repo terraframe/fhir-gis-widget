@@ -1,19 +1,36 @@
 <template>
   <div id="map-container">
+    <b-form id="search-form" @submit.prevent="onSearch" inline>
+      <b-form-select id="searchType" v-model="form.searchType" required>
+        <b-form-select-option value="IDENTIFIER">Identifier</b-form-select-option>
+        <b-form-select-option value="NAME">Name</b-form-select-option>
+      </b-form-select>
+      <b-form-input
+        v-if="form.searchType === 'IDENTIFIER'"
+        id="system"
+        v-model="form.system"
+        placeholder="System (opt)"
+      ></b-form-input>
+      <b-form-input id="text" v-model="form.text" :placeholder="form.searchType === 'IDENTIFIER' ? 'Identifier...' : 'Name...'"></b-form-input>
+      <b-button type="submit" variant="primary" :disabled="isLoading">Search</b-button>
+    </b-form>
     <div id="map" class="map-view-port"></div>
-    <div v-if="isLoading">Loading data from server</div>
-    <div v-else>
-      <button v-on:click="onSearch()">View FHIR locations</button>
-    </div>
   </div>
 </template>
 
 <script>
 import mapboxgl from "mapbox-gl";
+import bbox from "@turf/bbox";
 
 export default {
   data: () => ({
-    isLoading: false
+    isLoading: false,
+    form: {
+      searchType: "NAME",
+      system: null,
+      text: null,
+      checked: []
+    }
   }),
   mounted() {
     mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_API_KEY;
@@ -34,13 +51,35 @@ export default {
       try {
         this.isLoading = true;
 
-        const url = process.env.VUE_APP_FHIR_BASE_URL + "Location";
+        // Build the search URL
+        let url = process.env.VUE_APP_FHIR_BASE_URL + "/Location";
+
+        // Include the search parameters if there are any
+        if (this.form.text) {
+          if (this.form.searchType === "NAME") {
+            url += "?name=" + encodeURIComponent(this.form.text);
+          } else {
+            const identifier = this.form.system
+              ? this.form.system + "|" + this.form.text
+              : this.form.text;
+
+            url += "?identifier=" + encodeURIComponent(identifier);
+          }
+        }
 
         const response = await this.$http.get(url);
 
+        // Create the feature collection from the FHIR response
         const collection = this.createFeatureCollection(response.data);
 
-        this.map.getSource("children").setData(collection);
+        // Update the map results
+        this.map.getSource("locations").setData(collection);
+
+        // Zoom to the results on the map
+        if (collection.features.length > 0) {
+          var bounds = bbox(collection);
+          this.map.fitBounds(bounds, { padding: 20 });
+        }
       } catch (err) {
         // uh oh, didn't work, time for plan B
         console.log(err);
@@ -64,7 +103,7 @@ export default {
       const DEFAULT_COLOR = "#80cdc1";
       // const SELECTED_COLOR = "#800000";
 
-      const source = "children";
+      const source = "locations";
 
       this.map.addSource(source, {
         type: "geojson",
@@ -174,7 +213,7 @@ export default {
                     type: "Feature",
                     geometry: geometry,
                     properties: {
-                      name: resource.name || ''
+                      name: resource.name || ""
                     }
                   };
 
@@ -189,7 +228,12 @@ export default {
           });
 
           // Else fall back on the position data if it exists, otherwise do not map the location
-          if (!hasGeojsonExtension && resource.position != null && resource.position.longitude != null  && resource.position.latitude != null) {
+          if (
+            !hasGeojsonExtension &&
+            resource.position != null &&
+            resource.position.longitude != null &&
+            resource.position.latitude != null
+          ) {
             const feature = {
               type: "Feature",
               geometry: {
@@ -200,7 +244,7 @@ export default {
                 ]
               },
               properties: {
-                name: resource.name || ''
+                name: resource.name || ""
               }
             };
 
@@ -219,8 +263,14 @@ export default {
 <style scoped>
 @import "~mapbox-gl/dist/mapbox-gl.css";
 
-.map-view-port {
-  width: 100%;
-  height: 500px;
+#map-container{
+  position: relative;
+}
+
+#search-form {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
 }
 </style>
