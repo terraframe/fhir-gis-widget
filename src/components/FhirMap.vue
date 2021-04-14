@@ -12,7 +12,7 @@
         placeholder="System (opt)"
       ></b-form-input>
       <b-form-input id="text" v-model="form.text" :placeholder="form.searchType === 'IDENTIFIER' ? 'Identifier...' : 'Name...'"></b-form-input>
-      <b-button type="submit" variant="primary" :disabled="isLoading">Search</b-button>
+      <b-button type="submit" variant="primary" :disabled="isLoading"><font-awesome-icon icon="search" /></b-button>
     </b-form>
     <div id="map" class="map-view-port"></div>
   </div>
