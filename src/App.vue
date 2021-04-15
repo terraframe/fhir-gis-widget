@@ -1,6 +1,22 @@
 <template>
   <div id="app">
-    <FhirMap :accessToken="accessToken" :fhirServerUrl="fhirServerUrl" />
+    <FhirMap
+      :accessToken="accessToken"
+      :fhirServerUrl="fhirServerUrl"
+      :contextServices="[{
+        id:'cgr-geoserver',
+        type:'wms',
+        label:'CGR geoserver',
+        url:'https://localhost:8443/geoserver/georegistry/wms',
+        layers:[{
+          label:'Districts',
+          name:'georegistry:ml_0district'
+        },{
+          label:'Provinces',
+          name:'georegistry:ml_0province'
+        }]
+      }]"
+    />
   </div>
 </template>
 
@@ -11,7 +27,8 @@ export default {
   name: "App",
   data: () => ({
     accessToken: process.env.VUE_APP_MAPBOX_API_KEY,
-    fhirServerUrl: process.env.VUE_APP_FHIR_BASE_URL
+    fhirServerUrl: process.env.VUE_APP_FHIR_BASE_URL,
+    contextServices: [{}]
   }),
 
   components: {

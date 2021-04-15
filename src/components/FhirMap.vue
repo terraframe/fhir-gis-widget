@@ -20,7 +20,11 @@
         <font-awesome-icon icon="search" />
       </b-button>
     </b-form>
-    <LayerPanel v-on:baselayer="onChangeBaseLayer"></LayerPanel>
+    <LayerPanel
+      v-on:baselayer="onChangeBaseLayer"
+      v-on:contextchange="onChangeContextLayers"
+      :contextServices="contextServices"
+    ></LayerPanel>
     <div id="map" class="map-view-port"></div>
   </div>
 </template>
@@ -35,7 +39,7 @@ export default {
   components: {
     LayerPanel
   },
-  props: { accessToken: String, fhirServerUrl: String },
+  props: { accessToken: String, fhirServerUrl: String, contextServices: Array },
   data: () => ({
     isLoading: false,
     form: {
@@ -64,6 +68,26 @@ export default {
     });
   },
   methods: {
+    onChangeContextLayers() {
+      // Remove all context layers
+
+      this.contextServices.forEach(service => {
+        // Hello
+        const enabled = service.layers.filter(layer => layer.active);
+
+        if (enabled.length > 0) {
+          if (service.type === "wms") {
+            this.addWMSLayer(service, enabled);
+          } else {
+            console.log(
+              "Unsupported service type [" +
+                service.type +
+                "].  Supported types are: wms"
+            );
+          }
+        }
+      });
+    },
     async onSearch() {
       try {
         this.isLoading = true;
@@ -276,6 +300,34 @@ export default {
       }
 
       return { type: "FeatureCollection", features: features };
+    },
+    addWMSLayer(service, layers) {
+      let url = service.url;
+      url +=
+        "?bbox={bbox-epsg-3857}&format=image/png&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256";
+
+      url +=
+        "&LAYERS=" +
+        layers
+          .map(function(layer) {
+            return encodeURIComponent(layer.name);
+          })
+          .join(",");
+
+      this.map.addSource(service.id + "-source", {
+        type: "raster",
+        tiles: [url],
+        tileSize: 256
+      });
+      this.map.addLayer(
+        {
+          id: service.id + "-layer",
+          type: "raster",
+          source: service.id + "-source",
+          paint: {}
+        },
+        "locations-polygon"
+      );
     }
   }
 };
