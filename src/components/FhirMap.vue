@@ -11,9 +11,16 @@
         v-model="form.system"
         placeholder="System (opt)"
       ></b-form-input>
-      <b-form-input id="text" v-model="form.text" :placeholder="form.searchType === 'IDENTIFIER' ? 'Identifier...' : 'Name...'"></b-form-input>
-      <b-button type="submit" variant="primary" :disabled="isLoading"><font-awesome-icon icon="search" /></b-button>
+      <b-form-input
+        id="text"
+        v-model="form.text"
+        :placeholder="form.searchType === 'IDENTIFIER' ? 'Identifier...' : 'Name...'"
+      ></b-form-input>
+      <b-button type="submit" variant="primary" :disabled="isLoading">
+        <font-awesome-icon icon="search" />
+      </b-button>
     </b-form>
+    <LayerPanel v-on:baselayer="onChangeBaseLayer"></LayerPanel>
     <div id="map" class="map-view-port"></div>
   </div>
 </template>
@@ -22,7 +29,13 @@
 import mapboxgl from "mapbox-gl";
 import bbox from "@turf/bbox";
 
+import LayerPanel from "./LayerPanel";
+
 export default {
+  components: {
+    LayerPanel
+  },
+  props: { accessToken: String, fhirServerUrl: String },
   data: () => ({
     isLoading: false,
     form: {
@@ -30,14 +43,18 @@ export default {
       system: null,
       text: null,
       checked: []
+    },
+    collection: {
+      type: "FeatureCollection",
+      features: []
     }
   }),
   mounted() {
-    mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_API_KEY;
+    mapboxgl.accessToken = this.accessToken;
 
     this.map = new mapboxgl.Map({
       container: "map",
-      style: "mapbox://styles/mapbox/light-v9",
+      style: "mapbox://styles/mapbox/satellite-v9",
       center: [-96, 37.8],
       zoom: 3
     });
@@ -52,7 +69,7 @@ export default {
         this.isLoading = true;
 
         // Build the search URL
-        let url = process.env.VUE_APP_FHIR_BASE_URL + "/Location";
+        let url = this.fhirServerUrl + "/Location";
 
         // Include the search parameters if there are any
         if (this.form.text) {
@@ -70,14 +87,14 @@ export default {
         const response = await this.$http.get(url);
 
         // Create the feature collection from the FHIR response
-        const collection = this.createFeatureCollection(response.data);
+        this.collection = this.createFeatureCollection(response.data);
 
         // Update the map results
-        this.map.getSource("locations").setData(collection);
+        this.map.getSource("locations").setData(this.collection);
 
         // Zoom to the results on the map
-        if (collection.features.length > 0) {
-          var bounds = bbox(collection);
+        if (this.collection.features.length > 0) {
+          var bounds = bbox(this.collection);
           this.map.fitBounds(bounds, { padding: 20 });
         }
       } catch (err) {
@@ -88,16 +105,24 @@ export default {
       }
     },
     initMap() {
+      this.map.on("style.load", () => {
+        this.addLayer();
+      });
+
       this.addLayer();
 
       // Add zoom and rotation controls to the map.
       this.map.addControl(
-        new mapboxgl.NavigationControl({ visualizePitch: true })
+        new mapboxgl.NavigationControl({ visualizePitch: true }),
+        "bottom-left"
       );
       this.map.addControl(
         new mapboxgl.AttributionControl({ compact: true }),
         "bottom-right"
       );
+    },
+    onChangeBaseLayer(layer) {
+      this.map.setStyle(layer.url);
     },
     addLayer() {
       const DEFAULT_COLOR = "#80cdc1";
@@ -107,10 +132,7 @@ export default {
 
       this.map.addSource(source, {
         type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: []
-        }
+        data: this.collection
       });
 
       // Polygon layer
@@ -263,7 +285,7 @@ export default {
 <style scoped>
 @import "~mapbox-gl/dist/mapbox-gl.css";
 
-#map-container{
+#map-container {
   position: relative;
 }
 
@@ -271,6 +293,13 @@ export default {
   position: absolute;
   top: 10px;
   left: 10px;
+  z-index: 10;
+}
+
+.layer-toggle {
+  position: absolute;
+  right: 10px;
+  top: 10px;
   z-index: 10;
 }
 </style>
