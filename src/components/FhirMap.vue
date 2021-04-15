@@ -22,7 +22,7 @@
     </b-form>
     <LayerPanel
       v-on:baselayer="onChangeBaseLayer"
-      v-on:contextchange="onChangeContextLayers"
+      v-on:contextchange="refreshContextLayers"
       :contextServices="contextServices"
     ></LayerPanel>
     <div id="map" class="map-view-port"></div>
@@ -68,7 +68,7 @@ export default {
     });
   },
   methods: {
-    onChangeContextLayers() {
+    refreshContextLayers() {
       // Remove all context layers
 
       this.contextServices.forEach(service => {
@@ -78,6 +78,16 @@ export default {
         if (enabled.length > 0) {
           if (service.type === "wms") {
             this.addWMSLayer(service, enabled);
+          } else {
+            console.log(
+              "Unsupported service type [" +
+                service.type +
+                "].  Supported types are: wms"
+            );
+          }
+        } else {
+          if (service.type === "wms") {
+            this.removeWMSLayer(service, enabled);
           } else {
             console.log(
               "Unsupported service type [" +
@@ -130,10 +140,10 @@ export default {
     },
     initMap() {
       this.map.on("style.load", () => {
-        this.addLayer();
+        this.addLayers();
       });
 
-      this.addLayer();
+      this.addLayers();
 
       // Add zoom and rotation controls to the map.
       this.map.addControl(
@@ -148,7 +158,7 @@ export default {
     onChangeBaseLayer(layer) {
       this.map.setStyle(layer.url);
     },
-    addLayer() {
+    addLayers() {
       const DEFAULT_COLOR = "#80cdc1";
       // const SELECTED_COLOR = "#800000";
 
@@ -233,6 +243,8 @@ export default {
           "text-size": 12
         }
       });
+
+      this.refreshContextLayers();
     },
     createFeatureCollection(payload) {
       let features = [];
@@ -328,6 +340,10 @@ export default {
         },
         "locations-polygon"
       );
+    },
+    removeWMSLayer(service){
+      this.map.removeLayer(service.id + "-layer");
+      this.map.removeSource(service.id + "-source");
     }
   }
 };
