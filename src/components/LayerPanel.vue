@@ -27,22 +27,20 @@
           <h4>Context layers</h4>
         </div>
         <b-list-group v-for="service in contextServices" v-bind:key="service.label">
-            <b-list-group-item>
-              <label>{{ service.label }} ({{service.type}})</label>
-              <b-list-group>
-                <b-list-group v-for="layer in service.layers" v-bind:key="layer.name">
-                  <b-list-group>
-    <b-form-checkbox
-      v-model="layer.active"
-      :name="layer.name"
-      v-on:change="onContextChange"
-    >
-{{ layer.label }}
-    </b-form-checkbox>                    
-                  </b-list-group>
+          <b-list-group-item>
+            <label>{{ service.label }} ({{service.type}})</label>
+            <b-list-group>
+              <b-list-group v-for="layer in service.layers" v-bind:key="layer.name">
+                <b-list-group>
+                  <b-form-checkbox
+                    v-model="layer.active"
+                    :name="layer.name"
+                    v-on:change="onContextChange"
+                  >{{ layer.label }}</b-form-checkbox>
                 </b-list-group>
               </b-list-group>
-            </b-list-group-item>
+            </b-list-group>
+          </b-list-group-item>
         </b-list-group>
       </div>
     </div>

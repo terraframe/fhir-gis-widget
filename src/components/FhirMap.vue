@@ -72,29 +72,27 @@ export default {
       // Remove all context layers
 
       this.contextServices.forEach(service => {
-        // Hello
-        const enabled = service.layers.filter(layer => layer.active);
-
-        if (enabled.length > 0) {
-          if (service.type === "wms") {
+        if (service.type === "wms") {
+          const enabled = service.layers.filter(layer => layer.active);
+          if (enabled.length > 0) {
             this.addWMSLayer(service, enabled);
           } else {
-            console.log(
-              "Unsupported service type [" +
-                service.type +
-                "].  Supported types are: wms"
-            );
+            this.removeWMSLayer(service);
           }
+        } else if (service.type === "vector") {
+          service.layers.forEach(vectorLayer => {
+            if (vectorLayer.active) {
+              this.addVectorLayer(service, vectorLayer);
+            } else {
+              this.removeVectorLayer(service, vectorLayer);
+            }
+          });
         } else {
-          if (service.type === "wms") {
-            this.removeWMSLayer(service, enabled);
-          } else {
-            console.log(
-              "Unsupported service type [" +
-                service.type +
-                "].  Supported types are: wms"
-            );
-          }
+          console.log(
+            "Unsupported service type [" +
+              service.type +
+              "].  Supported types are: wms"
+          );
         }
       });
     },
@@ -160,7 +158,6 @@ export default {
     },
     addLayers() {
       const DEFAULT_COLOR = "#80cdc1";
-      // const SELECTED_COLOR = "#800000";
 
       const source = "locations";
 
@@ -341,9 +338,110 @@ export default {
         "locations-polygon"
       );
     },
-    removeWMSLayer(service){
-      this.map.removeLayer(service.id + "-layer");
-      this.map.removeSource(service.id + "-source");
+    removeWMSLayer(service) {
+      if (this.map.getSource(service.id + "-source") != null) {
+        this.map.removeLayer(service.id + "-layer");
+        this.map.removeSource(service.id + "-source");
+      }
+    },
+    addVectorLayer(service, layer) {
+      const SELECTED_COLOR = "#800000";
+
+      const source = layer.id + "-source";
+
+      this.map.addSource(source, {
+        type: "vector",
+        tiles: [layer.url]
+      });
+
+      // Point layer
+      this.map.addLayer(
+        {
+          id: source + "-points",
+          type: "circle",
+          source: source,
+          "source-layer": "context",
+          paint: {
+            "circle-radius": 10,
+            "circle-color": SELECTED_COLOR,
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#FFFFFF"
+          },
+          filter: [
+            "all",
+            ["match", ["geometry-type"], ["Point", "MultiPont"], true, false]
+          ]
+        },
+        "locations-polygon"
+      );
+
+      // Polygon layer
+      this.map.addLayer(
+        {
+          id: source + "-polygon",
+          type: "fill",
+          source: source,
+          "source-layer": "context",
+          layout: {},
+          paint: {
+            "fill-color": SELECTED_COLOR,
+            "fill-opacity": 0.8,
+            "fill-outline-color": "black"
+          },
+          filter: [
+            "all",
+            [
+              "match",
+              ["geometry-type"],
+              ["Polygon", "MultiPolygon"],
+              true,
+              false
+            ]
+          ]
+        },
+        "locations-polygon"
+      );
+
+      // Label layer
+      this.map.addLayer(
+        {
+          id: source + "-label",
+          source: source,
+          "source-layer": "context",
+          type: "symbol",
+          paint: {
+            "text-color": "black",
+            "text-halo-color": "#fff",
+            "text-halo-width": 2
+          },
+          layout: {
+            "text-field": [
+              "case",
+              ["has", "displayLabel_" + service.locale],
+              [
+                "coalesce",
+                ["string", ["get", "displayLabel_" + service.locale]],
+                ["string", ["get", "displayLabel"]]
+              ],
+              ["string", ["get", "displayLabel"]]
+            ],
+            "text-offset": [0, 0.6],
+            "text-anchor": "top",
+            "text-size": 12
+          }
+        },
+        "locations-polygon"
+      );
+    },
+    removeVectorLayer(service, layer) {
+      const source = layer.id + "-source";
+
+      if (this.map.getSource(source) != null) {
+        this.map.removeLayer(source + "-points");
+        this.map.removeLayer(source + "-polygon");
+        this.map.removeLayer(source + "-label");
+        this.map.removeSource(source);
+      }
     }
   }
 };
