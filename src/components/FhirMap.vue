@@ -39,7 +39,13 @@ export default {
   components: {
     LayerPanel
   },
-  props: { accessToken: String, fhirServerUrl: String, contextServices: Array },
+  props: {
+    accessToken: { type: String, required: true },
+    fhirServerUrl: { type: String, required: true },
+    contextServices: { type: Array, default: () => [] },
+    center: { type: Array, default: () => [-96, 37.8] },
+    zoom: { type: Number, default: 2 }
+  },
   data: () => ({
     isLoading: false,
     form: {
@@ -59,8 +65,8 @@ export default {
     this.map = new mapboxgl.Map({
       container: "map",
       style: "mapbox://styles/mapbox/satellite-v9",
-      center: [-96, 37.8],
-      zoom: 3
+      center: this.center,
+      zoom: this.zoom
     });
 
     this.map.on("load", () => {
@@ -70,21 +76,33 @@ export default {
   methods: {
     refreshContextLayers() {
       // Remove all context layers
+      this.contextServices.forEach(service => {
+        if (service.type === "wms") {
+          this.removeWMSLayer(service);
+        } else if (service.type === "vector") {
+          service.layers.forEach(vectorLayer => {
+            this.removeVectorLayer(service, vectorLayer);
+          });
+        } else {
+          console.log(
+            "Unsupported service type [" +
+              service.type +
+              "].  Supported types are: wms"
+          );
+        }
+      });
 
+      // Add the enabled layers
       this.contextServices.forEach(service => {
         if (service.type === "wms") {
           const enabled = service.layers.filter(layer => layer.active);
           if (enabled.length > 0) {
             this.addWMSLayer(service, enabled);
-          } else {
-            this.removeWMSLayer(service);
           }
         } else if (service.type === "vector") {
           service.layers.forEach(vectorLayer => {
             if (vectorLayer.active) {
               this.addVectorLayer(service, vectorLayer);
-            } else {
-              this.removeVectorLayer(service, vectorLayer);
             }
           });
         } else {
@@ -375,6 +393,29 @@ export default {
         "locations-polygon"
       );
 
+      // Line layer
+      this.map.addLayer({
+        id: source + "-line",
+        type: "line",
+        source: source,
+        "source-layer": "context",
+        paint: {
+          "line-color": SELECTED_COLOR,
+          "line-opacity": 0.8,
+          "line-width": 1
+        },
+        filter: [
+          "all",
+          [
+            "match",
+            ["geometry-type"],
+            ["LineString", "MultiLineString"],
+            true,
+            false
+          ]
+        ]
+      });
+
       // Polygon layer
       this.map.addLayer(
         {
@@ -438,6 +479,7 @@ export default {
 
       if (this.map.getSource(source) != null) {
         this.map.removeLayer(source + "-points");
+        this.map.removeLayer(source + "-line");
         this.map.removeLayer(source + "-polygon");
         this.map.removeLayer(source + "-label");
         this.map.removeSource(source);
