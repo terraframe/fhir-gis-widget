@@ -5,33 +5,14 @@
       :fhirServerUrl="fhirServerUrl"
       :center="center"
       :zoom="zoom"
-      :contextServices="[{
-        id:'cgr-geoserver',
-        type:'wms',
-        vendor:'geoserver',
-        label:'CGR geoserver',
-        url:'https://localhost:8443/geoserver/georegistry/wms',
-        layers:[{
-          label:'Districts',
-          name:'georegistry:ml_0district'
-        }]
-      },{
-        type:'vector',
-        label:'CGR vector',
-        locale:'en',
-        layers:[{
-          name:'d1',
-          label:'Cambodia 2021-03-31',
-          url:'https://localhost:8443/georegistry/master-list/tile?x={x}&y={y}&z={z}&config=%7B%22oid%22%3A%22c150e6e2-2bea-4b70-ac76-33eb600005f1%22%7D',
-        }
-        ]
-      }]"
+      :contextServices="contextServices"
     />
   </div>
 </template>
 
 <script>
 import FhirMap from "./components/FhirMap.vue";
+import contextServices from "./config/contex.json"
 
 export default {
   name: "App",
@@ -43,7 +24,7 @@ export default {
       parseFloat(process.env.VUE_APP_CENTER_Y)
     ],
     zoom: parseInt(process.env.VUE_APP_ZOOM),
-    contextServices: [{}]
+    contextServices: contextServices
   }),
 
   components: {

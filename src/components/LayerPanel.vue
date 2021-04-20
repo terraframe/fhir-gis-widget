@@ -64,9 +64,9 @@ export default {
         url: "mapbox://styles/mapbox/satellite-v9"
       },
       {
-        name: "Outdoors",
-        id: "outdoors-v11",
-        url: "mapbox://styles/mapbox/outdoors-v11"
+        name: "Hybrid",
+        id: "satellite-streets-v11",
+        url: "mapbox://styles/mapbox/satellite-streets-v11"
       }
     ],
     selectedLayer: "satellite-v9"

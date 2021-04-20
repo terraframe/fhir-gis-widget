@@ -2,20 +2,20 @@
   <div id="map-container">
     <b-form id="search-form" @submit.prevent="onSearch" inline>
       <b-form-select id="searchType" v-model="form.searchType" required>
-        <b-form-select-option value="IDENTIFIER">Identifier</b-form-select-option>
-        <b-form-select-option value="NAME">Name</b-form-select-option>
+        <b-form-select-option
+          v-for="sType of searchTypes "
+          v-bind:key="sType.key"
+          :value="sType.key"
+        >{{sType.label}}</b-form-select-option>
       </b-form-select>
       <b-form-input
-        v-if="form.searchType === 'IDENTIFIER'"
+        v-if="form.selected.type === 'system'"
         id="system"
         v-model="form.system"
         placeholder="System (opt)"
       ></b-form-input>
-      <b-form-input
-        id="text"
-        v-model="form.text"
-        :placeholder="form.searchType === 'IDENTIFIER' ? 'Identifier...' : 'Name...'"
-      ></b-form-input>
+      <b-form-input id="text" v-model="form.text" :placeholder="form.selected.placeholder"></b-form-input>
+      <b-form-input type="number" id="count" v-model="form.count" placeholder="Result Limit"></b-form-input>
       <b-button type="submit" variant="primary" :disabled="isLoading">
         <font-awesome-icon icon="search" />
       </b-button>
@@ -49,16 +49,46 @@ export default {
   data: () => ({
     isLoading: false,
     form: {
-      searchType: "NAME",
+      selected: {
+        key: "name",
+        type: "single",
+        label: "Name",
+        placeholder: "Name.."
+      },
+      searchType: "name",
       system: null,
       text: null,
+      count: 20,
       checked: []
     },
+    searchTypes: [
+      {
+        key: "identifier",
+        type: "system",
+        label: "Identifier",
+        placeholder: "Identifier.."
+      },
+      {
+        key: "type",
+        type: "system",
+        label: "Type",
+        placeholder: "Type.."
+      },
+      { key: "name", type: "single", label: "Name", placeholder: "Name.." }
+    ],
     collection: {
       type: "FeatureCollection",
       features: []
     }
   }),
+  watch: {
+    "form.searchType": function(searchType) {
+      this.form.selected = this.searchTypes.find(
+        sType => sType.key === searchType
+      );
+    }
+  },
+
   mounted() {
     mapboxgl.accessToken = this.accessToken;
 
@@ -92,19 +122,32 @@ export default {
         }
       });
 
-      // Add the enabled layers
+      // Create the enabled layer constructs
+      const layers = [];
+
       this.contextServices.forEach(service => {
-        if (service.type === "wms") {
-          const enabled = service.layers.filter(layer => layer.active);
-          if (enabled.length > 0) {
-            this.addWMSLayer(service, enabled);
+        service.layers.forEach(layer => {
+          if (layer.active) {
+            layers.push({
+              service: service,
+              layer: layer,
+              level: layer.level ? layer.level : 0
+            });
           }
+        });
+      });
+
+      // Sort the layers by level
+      layers.sort((l1, l2) => l1.level > l2.level);
+
+      // Add the enabled layers
+      layers.forEach(l => {
+        const service = l.service;
+
+        if (service.type === "wms") {
+          this.addWMSLayer(service, [l.layer]);
         } else if (service.type === "vector") {
-          service.layers.forEach(vectorLayer => {
-            if (vectorLayer.active) {
-              this.addVectorLayer(service, vectorLayer);
-            }
-          });
+          this.addVectorLayer(service, l.layer);
         } else {
           console.log(
             "Unsupported service type [" +
@@ -121,17 +164,18 @@ export default {
         // Build the search URL
         let url = this.fhirServerUrl + "/Location";
 
+        // Include the page limit if it has been defined
+        url += "?_count=" + this.form.count;
+
         // Include the search parameters if there are any
         if (this.form.text) {
-          if (this.form.searchType === "NAME") {
-            url += "?name=" + encodeURIComponent(this.form.text);
-          } else {
-            const identifier = this.form.system
-              ? this.form.system + "|" + this.form.text
-              : this.form.text;
+          let value = this.form.text;
 
-            url += "?identifier=" + encodeURIComponent(identifier);
+          if (this.form.selected.type === "system" && this.form.system) {
+            value = this.form.system + "|" + this.form.text;
           }
+
+          url += "&" + this.form.selected.key + "=" + encodeURIComponent(value);
         }
 
         const response = await this.$http.get(url);
