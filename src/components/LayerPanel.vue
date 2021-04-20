@@ -56,17 +56,26 @@ export default {
       {
         name: "Streets",
         id: "streets-v11",
-        url: "mapbox://styles/mapbox/streets-v11"
+        url: "mapbox://styles/mapbox/streets-v11",
+        type:'mapbox'
       },
       {
         name: "Satellite",
         id: "satellite-v9",
-        url: "mapbox://styles/mapbox/satellite-v9"
+        url: "mapbox://styles/mapbox/satellite-v9",
+        type:'mapbox'
       },
       {
         name: "Hybrid",
         id: "satellite-streets-v11",
-        url: "mapbox://styles/mapbox/satellite-streets-v11"
+        url: "mapbox://styles/mapbox/satellite-streets-v11",
+        type:'mapbox'
+      },
+      {
+        name: "Streets OSM",
+        id: "street-osm",
+        url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        type:'osm'
       }
     ],
     selectedLayer: "satellite-v9"

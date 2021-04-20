@@ -216,7 +216,29 @@ export default {
       );
     },
     onChangeBaseLayer(layer) {
-      this.map.setStyle(layer.url);
+      if (layer.type === "mapbox") {
+        this.map.setStyle(layer.url);
+      } else if (layer.type === "osm") {
+        this.map.setStyle({
+          version: 8,
+          sources: {
+            osm: {
+              type: "raster",
+              tiles: [layer.url],
+              tileSize: 256,
+              attribution:
+                'Map tiles by <a target="_top" rel="noopener" href="https://tile.openstreetmap.org/">OpenStreetMap tile servers</a>, under the <a target="_top" rel="noopener" href="https://operations.osmfoundation.org/policies/tiles/">tile usage policy</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>'
+            }
+          },
+          layers: [
+            {
+              id: "osm",
+              type: "raster",
+              source: "osm"
+            }
+          ]
+        });
+      }
     },
     addLayers() {
       const DEFAULT_COLOR = "#80cdc1";
