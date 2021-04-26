@@ -100,10 +100,12 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .layer-button {
-  background-color: white;
-  padding: 5px;
+  padding: 6px;
   vertical-align: middle;
   font-size: 18px;
   color: black;
+  float: right;
+  border-radius: 4px;
+  background: #fff;
 }
 </style>

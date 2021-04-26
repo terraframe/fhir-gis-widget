@@ -9,7 +9,7 @@
         >{{sType.label}}</b-form-select-option>
       </b-form-select>
 
-      <b-input-group>
+      <b-input-group class="search-prepend">
         <b-input-group-prepend v-if="form.selected.options.length > 0">
           <b-dropdown :text="form.option">
             <b-dropdown-item
@@ -37,8 +37,8 @@
         <b-form-input id="text" v-model="form.text" :placeholder="form.selected.placeholder"></b-form-input>
       </b-input-group>
 
-      <b-input-group>
-        <b-input-group-prepend>
+      <b-input-group class="search-prepend">
+        <b-input-group-prepend class="search-prepend">
           <b-input-group-text>Limit</b-input-group-text>
         </b-input-group-prepend>
         <b-form-input type="number" id="count" v-model="form.count"></b-form-input>
@@ -258,7 +258,7 @@ export default {
       // Add zoom and rotation controls to the map.
       this.map.addControl(
         new mapboxgl.NavigationControl({ visualizePitch: true }),
-        "bottom-left"
+        "top-right"
       );
       this.map.addControl(
         new mapboxgl.AttributionControl({ compact: true }),
@@ -623,10 +623,15 @@ export default {
   z-index: 10;
 }
 
+.search-prepend {
+  margin-left: 5px;
+}
+
 .layer-toggle {
   position: absolute;
-  right: 10px;
-  top: 10px;
+  right: 0px;
+  top: 90px;
   z-index: 10;
+  margin: 10px 11px 0 0;
 }
 </style>
