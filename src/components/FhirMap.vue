@@ -8,17 +8,46 @@
           :value="sType.key"
         >{{sType.label}}</b-form-select-option>
       </b-form-select>
-      <b-form-input
-        v-if="form.selected.type === 'system'"
-        id="system"
-        v-model="form.system"
-        placeholder="System (opt)"
-      ></b-form-input>
-      <b-form-input id="text" v-model="form.text" :placeholder="form.selected.placeholder"></b-form-input>
-      <b-form-input type="number" id="count" v-model="form.count" placeholder="Result Limit"></b-form-input>
-      <b-button type="submit" variant="primary" :disabled="isLoading">
+
+      <b-input-group>
+        <b-input-group-prepend v-if="form.selected.options.length > 0">
+          <b-dropdown :text="form.option">
+            <b-dropdown-item
+              v-for="option of form.selected.options"
+              v-bind:key="option"
+              v-on:click="setOption(option)"
+            >{{option}}</b-dropdown-item>
+          </b-dropdown>
+        </b-input-group-prepend>
+
+        <b-input-group-prepend v-if="form.selected.system">
+          <b-input-group-text>System</b-input-group-text>
+        </b-input-group-prepend>
+        <b-form-input
+          v-if="form.selected.system"
+          id="system"
+          v-model="form.system"
+          placeholder="(opt)"
+        ></b-form-input>
+
+        <b-input-group-prepend>
+          <b-input-group-text>{{form.selected.label}}</b-input-group-text>
+        </b-input-group-prepend>
+
+        <b-form-input id="text" v-model="form.text" :placeholder="form.selected.placeholder"></b-form-input>
+      </b-input-group>
+
+      <b-input-group>
+        <b-input-group-prepend>
+          <b-input-group-text>Limit</b-input-group-text>
+        </b-input-group-prepend>
+        <b-form-input type="number" id="count" v-model="form.count"></b-form-input>
+      </b-input-group>
+
+      <b-button type="submit" variant="primary" v-show="!isLoading" :disabled="isLoading">
         <font-awesome-icon icon="search" />
       </b-button>
+      <b-spinner v-if="isLoading" variant="primary" type="grow" label="Spinning"></b-spinner>
     </b-form>
     <LayerPanel
       v-on:baselayer="onChangeBaseLayer"
@@ -51,30 +80,40 @@ export default {
     form: {
       selected: {
         key: "name",
-        type: "single",
+        system: false,
         label: "Name",
-        placeholder: "Name.."
+        placeholder: "Name..",
+        options: []
       },
       searchType: "name",
       system: null,
       text: null,
+      option: "=",
       count: 20,
       checked: []
     },
     searchTypes: [
       {
         key: "identifier",
-        type: "system",
+        system: true,
         label: "Identifier",
-        placeholder: "Identifier.."
+        placeholder: "Identifier..",
+        options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"]
       },
       {
         key: "type",
-        type: "system",
+        system: true,
         label: "Type",
-        placeholder: "Type.."
+        placeholder: "Type..",
+        options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"]
       },
-      { key: "name", type: "single", label: "Name", placeholder: "Name.." }
+      {
+        key: "name",
+        system: false,
+        label: "Name",
+        placeholder: "Name..",
+        options: []
+      }
     ],
     collection: {
       type: "FeatureCollection",
@@ -86,6 +125,8 @@ export default {
       this.form.selected = this.searchTypes.find(
         sType => sType.key === searchType
       );
+
+      this.form.option = "=";
     }
   },
 
@@ -104,6 +145,9 @@ export default {
     });
   },
   methods: {
+    setOption(option) {
+      this.form.option = option;
+    },
     refreshContextLayers() {
       // Remove all context layers
       this.contextServices.forEach(service => {
@@ -171,11 +215,17 @@ export default {
         if (this.form.text) {
           let value = this.form.text;
 
-          if (this.form.selected.type === "system" && this.form.system) {
+          if (this.form.selected.system && this.form.system) {
             value = this.form.system + "|" + this.form.text;
           }
 
-          url += "&" + this.form.selected.key + "=" + encodeURIComponent(value);
+          url += "&" + this.form.selected.key;
+
+          if (this.form.option !== "=") {
+            url += encodeURIComponent(this.form.option);
+          }
+
+          url += "=" + encodeURIComponent(value);
         }
 
         const response = await this.$http.get(url);
@@ -221,7 +271,7 @@ export default {
       } else if (layer.type === "osm") {
         this.map.setStyle({
           version: 8,
-          "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+          glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
           sources: {
             osm: {
               type: "raster",
@@ -338,34 +388,36 @@ export default {
           const resource = entry.resource;
 
           // Use geojson if exists
-          resource.extension.forEach(extension => {
-            if (
-              extension.url ===
-              "http://hl7.org/fhir/StructureDefinition/location-boundary-geojson"
-            ) {
-              try {
-                const data = extension.valueAttachment.data;
+          if (resource.extension != null) {
+            resource.extension.forEach(extension => {
+              if (
+                extension.url ===
+                "http://hl7.org/fhir/StructureDefinition/location-boundary-geojson"
+              ) {
+                try {
+                  const data = extension.valueAttachment.data;
 
-                if (data) {
-                  const geometry = JSON.parse(window.atob(data));
+                  if (data) {
+                    const geometry = JSON.parse(window.atob(data));
 
-                  const feature = {
-                    type: "Feature",
-                    geometry: geometry,
-                    properties: {
-                      name: resource.name || ""
-                    }
-                  };
+                    const feature = {
+                      type: "Feature",
+                      geometry: geometry,
+                      properties: {
+                        name: resource.name || ""
+                      }
+                    };
 
-                  features.push(feature);
+                    features.push(feature);
 
-                  hasGeojsonExtension = true;
+                    hasGeojsonExtension = true;
+                  }
+                } catch (e) {
+                  hasGeojsonExtension = false;
                 }
-              } catch (e) {
-                hasGeojsonExtension = false;
               }
-            }
-          });
+            });
+          }
 
           // Else fall back on the position data if it exists, otherwise do not map the location
           if (

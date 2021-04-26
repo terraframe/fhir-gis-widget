@@ -23,3 +23,5 @@ pnpm-debug.log*
 *.sw?
 /.env
 /.env.production
+/notes.txt
+/dev-ops.txt

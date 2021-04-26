@@ -4,23 +4,24 @@
     @mouseenter="baselayerIconHover = true"
     @mouseleave="baselayerIconHover = false"
   >
-    <i style="vertical-align: middle; font-size: 18px; color: black;">
-      <font-awesome-icon v-if="!baselayerIconHover" icon="bars" />
+    <i v-if="!baselayerIconHover" class="layer-button">
+      <font-awesome-icon icon="bars" />
     </i>
 
-    <div v-show="baselayerIconHover">
+    <b-card v-show="baselayerIconHover">
       <div style="margin-bottom: 10px;">
-        <h4>Base Layers</h4>
-        <div v-for="baseLayer in baseLayers" v-bind:key="baseLayer.id" class="row-form">
-          <input
-            class="layer-toggle-input"
-            type="radio"
+        <b-form-group v-slot="{ ariaDescribedby }">
+          <h4>Base layer</h4>
+
+          <b-form-radio
+            v-for="baseLayer in baseLayers"
+            v-bind:key="baseLayer.id"
+            v-model="selectedLayer"
+            :aria-describedby="ariaDescribedby"
             name="selectedLayer"
             :value="baseLayer.id"
-            v-model="selectedLayer"
-          />
-          <label class="layer-toggle-label">{{baseLayer.name}}</label>
-        </div>
+          >{{baseLayer.name}}</b-form-radio>
+        </b-form-group>
       </div>
       <div v-if="contextServices && contextServices.length > 0">
         <div>
@@ -43,7 +44,7 @@
           </b-list-group-item>
         </b-list-group>
       </div>
-    </div>
+    </b-card>
   </div>
 </template>
 
@@ -57,25 +58,25 @@ export default {
         name: "Streets",
         id: "streets-v11",
         url: "mapbox://styles/mapbox/streets-v11",
-        type:'mapbox'
+        type: "mapbox"
       },
       {
         name: "Satellite",
         id: "satellite-v9",
         url: "mapbox://styles/mapbox/satellite-v9",
-        type:'mapbox'
+        type: "mapbox"
       },
       {
         name: "Hybrid",
         id: "satellite-streets-v11",
         url: "mapbox://styles/mapbox/satellite-streets-v11",
-        type:'mapbox'
+        type: "mapbox"
       },
       {
         name: "Streets OSM",
         id: "street-osm",
         url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-        type:'osm'
+        type: "osm"
       }
     ],
     selectedLayer: "satellite-v9"
@@ -98,8 +99,11 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.layer-toggle {
+.layer-button {
   background-color: white;
   padding: 5px;
+  vertical-align: middle;
+  font-size: 18px;
+  color: black;
 }
 </style>
