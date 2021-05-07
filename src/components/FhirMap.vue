@@ -1,61 +1,87 @@
 <template>
-  <div id="map-container">
-    <b-form id="search-form" @submit.prevent="onSearch" inline>
-      <b-form-select id="searchType" v-model="form.searchType" required>
-        <b-form-select-option
-          v-for="sType of searchTypes "
-          v-bind:key="sType.key"
-          :value="sType.key"
-        >{{sType.label}}</b-form-select-option>
-      </b-form-select>
+  <v-container>
+    <v-row>
+      <v-col class="d-flex" cols="12" sm="3">
+        <tree :data="treeData" :options="treeOptions" ref="tree" />
+      </v-col>
+      <v-col class="d-flex" cols="12" sm="9">
+        <div id="map-container">
+          <v-container id="search-form" fluid>
+            <v-form @submit.prevent="onSearch" inline>
+              <v-row>
+                <v-col class="d-flex" cols="12" sm="3">
+                  <v-select
+                    filled
+                    id="searchType"
+                    v-model="form.searchType"
+                    :items="searchTypes"
+                    item-text="label"
+                    item-value="key"
+                    required
+                  ></v-select>
+                </v-col>
 
-      <b-input-group class="search-prepend">
-        <b-input-group-prepend v-if="form.selected.options.length > 0">
-          <b-dropdown :text="form.option">
-            <b-dropdown-item
-              v-for="option of form.selected.options"
-              v-bind:key="option"
-              v-on:click="setOption(option)"
-            >{{option}}</b-dropdown-item>
-          </b-dropdown>
-        </b-input-group-prepend>
+                <v-col class="d-flex" cols="12" sm="5">
+                  <v-select
+                    v-if="form.selected.options.length > 0"
+                    filled
+                    v-model="form.option"
+                    :items="form.selected.options"
+                    item-text="label"
+                    item-value="key"
+                  ></v-select>
 
-        <b-input-group-prepend v-if="form.selected.system">
-          <b-input-group-text>System</b-input-group-text>
-        </b-input-group-prepend>
-        <b-form-input
-          v-if="form.selected.system"
-          id="system"
-          v-model="form.system"
-          placeholder="(opt)"
-        ></b-form-input>
+                  <v-text-field
+                    filled
+                    v-if="form.selected.system"
+                    id="system"
+                    v-model="form.system"
+                    placeholder="(opt)"
+                    label="System"
+                  ></v-text-field>
 
-        <b-input-group-prepend>
-          <b-input-group-text>{{form.selected.label}}</b-input-group-text>
-        </b-input-group-prepend>
+                  <v-text-field
+                    filled
+                    v-if="!form.selected.select"
+                    id="text"
+                    v-model="form.text"
+                    :label="form.selected.label"
+                    :placeholder="form.selected.placeholder"
+                  ></v-text-field>
+                  <v-select
+                    filled
+                    v-if="form.selected.select"
+                    id="text"
+                    v-model="form.text"
+                    :items="form.selected.select"
+                    item-text="sType"
+                    item-value="sType"
+                  ></v-select>
+                </v-col>
 
-        <b-form-input id="text" v-model="form.text" :placeholder="form.selected.placeholder"></b-form-input>
-      </b-input-group>
+                <v-col class="d-flex" cols="12" sm="1">
+                  <v-text-field filled label="limit" type="number" id="count" v-model="form.count"></v-text-field>
+                </v-col>
 
-      <b-input-group class="search-prepend">
-        <b-input-group-prepend class="search-prepend">
-          <b-input-group-text>Limit</b-input-group-text>
-        </b-input-group-prepend>
-        <b-form-input type="number" id="count" v-model="form.count"></b-form-input>
-      </b-input-group>
-
-      <b-button type="submit" variant="primary" v-show="!isLoading" :disabled="isLoading">
-        <font-awesome-icon icon="search" />
-      </b-button>
-      <b-spinner v-if="isLoading" variant="primary" type="grow" label="Spinning"></b-spinner>
-    </b-form>
-    <LayerPanel
-      v-on:baselayer="onChangeBaseLayer"
-      v-on:contextchange="refreshContextLayers"
-      :contextServices="contextServices"
-    ></LayerPanel>
-    <div id="map" class="map-view-port"></div>
-  </div>
+                <v-col class="d-flex" cols="12" sm="1">
+                  <v-btn type="submit" variant="primary" v-show="!isLoading" :disabled="isLoading">
+                    <font-awesome-icon icon="search" />
+                  </v-btn>
+                  <v-progress-circular v-if="isLoading" indeterminate color="primary"></v-progress-circular>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-container>
+          <LayerPanel
+            v-on:baselayer="onChangeBaseLayer"
+            v-on:contextchange="refreshContextLayers"
+            :contextServices="contextServices"
+          ></LayerPanel>
+          <div id="map" class="map-view-port"></div>
+        </div>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
@@ -73,53 +99,70 @@ export default {
     fhirServerUrl: { type: String, required: true },
     contextServices: { type: Array, default: () => [] },
     center: { type: Array, default: () => [-96, 37.8] },
-    zoom: { type: Number, default: 2 }
+    zoom: { type: Number, default: 2 },
+    root: { type: Number },
+    includeRoot: { type: Boolean, default: true }
   },
-  data: () => ({
-    isLoading: false,
-    form: {
-      selected: {
-        key: "name",
-        system: false,
-        label: "Name",
-        placeholder: "Name..",
-        options: []
+  data() {
+    return {
+      treeOptions: {
+        fetchData: node => {
+          return this.getNodes(node);
+        }
       },
-      searchType: "name",
-      system: null,
-      text: null,
-      option: "=",
-      count: 20,
-      checked: []
-    },
-    searchTypes: [
-      {
-        key: "identifier",
-        system: true,
-        label: "Identifier",
-        placeholder: "Identifier..",
-        options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"]
+      selected: null,
+      isLoading: false,
+      form: {
+        selected: {
+          key: "name",
+          system: false,
+          label: "Name",
+          placeholder: "Name..",
+          options: []
+        },
+        searchType: "name",
+        system: null,
+        text: null,
+        option: "=",
+        count: 20,
+        checked: []
       },
-      {
-        key: "type",
-        system: true,
-        label: "Type",
-        placeholder: "Type..",
-        options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"]
-      },
-      {
-        key: "name",
-        system: false,
-        label: "Name",
-        placeholder: "Name..",
-        options: []
+      searchTypes: [
+        {
+          key: "identifier",
+          system: true,
+          label: "Identifier",
+          placeholder: "Identifier..",
+          options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"]
+        },
+        {
+          key: "type",
+          system: true,
+          label: "Type",
+          placeholder: "Type..",
+          options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"]
+        },
+        {
+          key: "status",
+          system: false,
+          label: "Status",
+          select: ["active", "suspended", "inactive"],
+          options: []
+        },
+        {
+          key: "name",
+          system: false,
+          label: "Name",
+          placeholder: "Name..",
+          options: []
+        }
+      ],
+      collection: {
+        type: "FeatureCollection",
+        features: []
       }
-    ],
-    collection: {
-      type: "FeatureCollection",
-      features: []
-    }
-  }),
+    };
+  },
   watch: {
     "form.searchType": function(searchType) {
       this.form.selected = this.searchTypes.find(
@@ -133,6 +176,10 @@ export default {
   mounted() {
     mapboxgl.accessToken = this.accessToken;
 
+    if (this.root != null) {
+      this.selected = this.root;
+    }
+
     this.map = new mapboxgl.Map({
       container: "map",
       style: "mapbox://styles/mapbox/satellite-v9",
@@ -142,6 +189,12 @@ export default {
 
     this.map.on("load", () => {
       this.initMap();
+    });
+
+    this.$refs.tree.$on("node:selected", e => {
+      this.selected = e.data.id;
+
+      this.onSearch();
     });
   },
   methods: {
@@ -201,6 +254,50 @@ export default {
         }
       });
     },
+    getNodes(node) {
+      // Build the search URL
+      let url = this.fhirServerUrl + "/Location";
+
+      const params = {};
+
+      if (node.id === "root") {
+        if (this.root != null) {
+          if (this.includeRoot) {
+            params["_id"] = this.root;
+          } else {
+            params.partof = "Location/" + this.root;
+          }
+        }
+      } else {
+        params.partof = node.data.id;
+      }
+
+      return this.$http
+        .get(url, {
+          params: params
+        })
+        .then(resp => {
+          const nodes = [];
+
+          if (resp.data.entry != null) {
+            resp.data.entry.forEach(entry => {
+              if (entry.resource) {
+                const resource = entry.resource;
+
+                const node = {
+                  text: resource.name,
+                  data: { id: resource.resourceType + "/" + resource.id },
+                  isBatch: true
+                };
+
+                nodes.push(node);
+              }
+            });
+          }
+
+          return nodes;
+        });
+    },
     async onSearch() {
       try {
         this.isLoading = true;
@@ -208,8 +305,13 @@ export default {
         // Build the search URL
         let url = this.fhirServerUrl + "/Location";
 
-        // Include the page limit if it has been defined
-        url += "?_count=" + this.form.count;
+        const params = {
+          _count: this.form.count
+        };
+
+        if (this.selected != null) {
+          params.partof = this.selected;
+        }
 
         // Include the search parameters if there are any
         if (this.form.text) {
@@ -219,16 +321,18 @@ export default {
             value = this.form.system + "|" + this.form.text;
           }
 
-          url += "&" + this.form.selected.key;
+          let attr = this.form.selected.key;
 
           if (this.form.option !== "=") {
-            url += encodeURIComponent(this.form.option);
+            attr += this.form.option;
           }
 
-          url += "=" + encodeURIComponent(value);
+          params[attr] = value;
         }
 
-        const response = await this.$http.get(url);
+        const response = await this.$http.get(url, {
+          params: params
+        });
 
         // Create the feature collection from the FHIR response
         this.collection = this.createFeatureCollection(response.data);
@@ -621,6 +725,10 @@ export default {
   top: 10px;
   left: 10px;
   z-index: 10;
+}
+
+.v-input {
+  background: white;
 }
 
 .search-prepend {

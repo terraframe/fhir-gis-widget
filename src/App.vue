@@ -1,13 +1,14 @@
 <template>
-  <div id="app">
+  <v-app id="app">
     <FhirMap
       :accessToken="accessToken"
       :fhirServerUrl="fhirServerUrl"
       :center="center"
       :zoom="zoom"
       :contextServices="contextServices"
+      root="1351"
     />
-  </div>
+  </v-app>
 </template>
 
 <script>
@@ -42,7 +43,7 @@ export default {
 }
 
 .map-view-port {
-  width: 100%;
+  width: 100vh;
   height: 100vh;
 }
 </style>

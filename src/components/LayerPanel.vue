@@ -8,43 +8,39 @@
       <font-awesome-icon icon="bars" />
     </i>
 
-    <b-card v-show="baselayerIconHover">
+    <v-card v-show="baselayerIconHover">
       <div style="margin-bottom: 10px;">
-        <b-form-group v-slot="{ ariaDescribedby }">
+        
+        <v-radio-group column v-model="selectedLayer">
           <h4>Base layer</h4>
 
-          <b-form-radio
+          <v-radio
             v-for="baseLayer in baseLayers"
             v-bind:key="baseLayer.id"
-            v-model="selectedLayer"
-            :aria-describedby="ariaDescribedby"
             name="selectedLayer"
             :value="baseLayer.id"
-          >{{baseLayer.name}}</b-form-radio>
-        </b-form-group>
+            :label="baseLayer.name"
+          ></v-radio>
+        </v-radio-group>
       </div>
       <div v-if="contextServices && contextServices.length > 0">
         <div>
           <h4>Context layers</h4>
         </div>
-        <b-list-group v-for="service in contextServices" v-bind:key="service.label">
-          <b-list-group-item>
+        <v-list v-for="service in contextServices" v-bind:key="service.label">
             <label>{{ service.label }} ({{service.type}})</label>
-            <b-list-group>
-              <b-list-group v-for="layer in service.layers" v-bind:key="layer.name">
-                <b-list-group>
-                  <b-form-checkbox
+              
+              <v-list-item v-for="layer in service.layers" v-bind:key="layer.name">
+                  <v-checkbox
                     v-model="layer.active"
                     :name="layer.name"
+                    :label="layer.label"
                     v-on:change="onContextChange"
-                  >{{ layer.label }}</b-form-checkbox>
-                </b-list-group>
-              </b-list-group>
-            </b-list-group>
-          </b-list-group-item>
-        </b-list-group>
+                  ></v-checkbox>
+              </v-list-item>
+            </v-list>
       </div>
-    </b-card>
+    </v-card>
   </div>
 </template>
 

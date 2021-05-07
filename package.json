@@ -2,30 +2,37 @@
   "name": "fhir-gis-widget",
   "version": "0.1.0",
   "private": true,
-  "main": "dist/fhir-gis-widget.umd.js",
-  "module": "dist/fhir-gis-widget.esm.js",
-  "unpkg": "dist/fhir-gis-widget.min.js",  
-  "browser": {
-    "./sfc": "src/components/FhirMap.vue"
-  },  
   "scripts": {
     "serve": "vue-cli-service serve --port 8090",
     "build": "vue-cli-service build",
-    "build-bundle": "vue-cli-service build --target lib --name fhir-gis-widget ./src/components/FhirMap.vue",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "build-bundle": "vue-cli-service build --target lib --name fhir-gis-widget ./src/components/FhirMap.vue"
   },
+  "main": "dist/fhir-gis-widget.umd.js",
+  "module": "dist/fhir-gis-widget.esm.js",
+  "browser": {
+    "./sfc": "src/components/FhirMap.vue"
+  },
+  "unpkg": "dist/fhir-gis-widget.min.js",
+  "files": [
+    "dist/*",
+    "src/*",
+    "public/*",
+    "*.json",
+    "*.js"
+  ],
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.35",
     "@fortawesome/free-solid-svg-icons": "^5.15.3",
     "@fortawesome/vue-fontawesome": "^2.0.2",
     "@turf/turf": "^6.3.0",
     "axios": "^0.21.1",
-    "bootstrap": "^4.6.0",
-    "bootstrap-vue": "^2.21.2",
     "core-js": "^3.6.5",
+    "liquor-tree": "^0.2.70",
     "mapbox-gl": "^1.13.1",
     "vue": "^2.6.11",
-    "vue-axios": "^3.2.4"
+    "vue-axios": "^3.2.4",
+    "vuetify": "^2.4.0"
   },
   "devDependencies": {
     "@types/mapbox-gl": "1.11.1",
@@ -35,7 +42,11 @@
     "babel-eslint": "^10.1.0",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
-    "vue-template-compiler": "^2.6.11"
+    "sass": "^1.32.0",
+    "sass-loader": "^10.0.0",
+    "vue-cli-plugin-vuetify": "~2.4.0",
+    "vue-template-compiler": "^2.6.11",
+    "vuetify-loader": "^1.7.0"
   },
   "eslintConfig": {
     "root": true,
@@ -55,6 +66,5 @@
     "> 1%",
     "last 2 versions",
     "not dead"
-  ],
-  "files": [  "dist/*",  "src/*",  "public/*",  "*.json",  "*.js"]
+  ]
 }
