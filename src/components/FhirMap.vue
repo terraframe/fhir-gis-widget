@@ -313,6 +313,9 @@ export default {
           params.partof = this.selected;
         }
 
+        // Recurive include for location
+        params["_revinclude"] = "Location:partof";
+
         // Include the search parameters if there are any
         if (this.form.text) {
           let value = this.form.text;
