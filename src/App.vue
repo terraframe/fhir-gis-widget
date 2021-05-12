@@ -35,15 +35,19 @@ export default {
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-}
+  html {
+    overflow: hidden;
+  }
 
-.map-view-port {
-  width: 100vh;
-  height: 100vh;
-}
+  #app {
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #2c3e50;
+  }
+
+  .map-view-port {
+    width: 100%;
+    height: calc(100vh - 24px);
+  }
 </style>

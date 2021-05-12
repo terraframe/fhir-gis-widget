@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container fluid>
     <v-row>
       <v-col class="d-flex" cols="12" sm="3">
         <tree :data="treeData" :options="treeOptions" ref="tree" />
@@ -9,10 +9,12 @@
           <v-container id="search-form" fluid>
             <v-form @submit.prevent="onSearch" inline>
               <v-row>
-                <v-col class="d-flex" cols="12" sm="3">
+                <v-col class="d-flex" cols="3" sm="3">
                   <v-select
                     filled
+                    outlined
                     id="searchType"
+                    class="select-input"
                     v-model="form.searchType"
                     :items="searchTypes"
                     item-text="label"
@@ -21,10 +23,11 @@
                   ></v-select>
                 </v-col>
 
-                <v-col class="d-flex" cols="12" sm="5">
+                <v-col class="d-flex" cols="5" sm="5">
                   <v-select
                     v-if="form.selected.options.length > 0"
                     filled
+                    outlined
                     v-model="form.option"
                     :items="form.selected.options"
                     item-text="label"
@@ -33,8 +36,10 @@
 
                   <v-text-field
                     filled
+                    outlined
                     v-if="form.selected.system"
                     id="system"
+                    style="margin-left: 5px;"
                     v-model="form.system"
                     placeholder="(opt)"
                     label="System"
@@ -42,16 +47,20 @@
 
                   <v-text-field
                     filled
+                    outlined
                     v-if="!form.selected.select"
                     id="text"
+                    style="margin-left: 5px;"
                     v-model="form.text"
                     :label="form.selected.label"
                     :placeholder="form.selected.placeholder"
                   ></v-text-field>
                   <v-select
                     filled
+                    outlined
                     v-if="form.selected.select"
                     id="text"
+                    style="margin-left: 5px;"
                     v-model="form.text"
                     :items="form.selected.select"
                     item-text="sType"
@@ -59,12 +68,12 @@
                   ></v-select>
                 </v-col>
 
-                <v-col class="d-flex" cols="12" sm="1">
-                  <v-text-field filled label="limit" type="number" id="count" v-model="form.count"></v-text-field>
+                <v-col class="d-flex" cols="1" sm="1">
+                  <v-text-field filled outlined label="limit" type="number" id="count" v-model="form.count"></v-text-field>
                 </v-col>
 
-                <v-col class="d-flex" cols="12" sm="1">
-                  <v-btn type="submit" variant="primary" v-show="!isLoading" :disabled="isLoading">
+                <v-col class="d-flex" cols="1" sm="1">
+                  <v-btn id="search-button" type="submit" variant="primary" v-show="!isLoading" :disabled="isLoading">
                     <font-awesome-icon icon="search" />
                   </v-btn>
                   <v-progress-circular v-if="isLoading" indeterminate color="primary"></v-progress-circular>
@@ -717,32 +726,50 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-@import "~mapbox-gl/dist/mapbox-gl.css";
+  @import "~mapbox-gl/dist/mapbox-gl.css";
 
-#map-container {
-  position: relative;
-}
+  #map-container {
+    position: relative;
+    width: 100%;
+  }
 
-#search-form {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 10;
-}
+  #search-form {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+  }
 
-.v-input {
-  background: white;
-}
+  #search-button {
+    height: 56px;
+  }
 
-.search-prepend {
-  margin-left: 5px;
-}
+  .v-input {
+  
+  }
 
-.layer-toggle {
-  position: absolute;
-  right: 0px;
-  top: 90px;
-  z-index: 10;
-  margin: 10px 11px 0 0;
-}
+  /deep/ .theme--light.v-text-field--filled > .v-input__control > .v-input__slot {
+        background: rgb(255, 255, 255) !important;
+  }
+
+
+  .search-prepend {
+    margin-left: 5px;
+  }
+
+  .layer-button {
+    width: 29px;
+    height: 29px;
+  }
+
+  .layer-toggle {
+    position: absolute;
+    right: 0px;
+    top: 90px;
+    z-index: 10;
+    margin: 10px 9px 0 0;
+    border: solid 2.5px rgba(211,211,211,.7);
+    border-radius: 5px;
+    background: #fff;
+  }
 </style>

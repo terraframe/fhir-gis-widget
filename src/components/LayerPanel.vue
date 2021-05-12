@@ -8,7 +8,7 @@
       <font-awesome-icon icon="bars" />
     </i>
 
-    <v-card v-show="baselayerIconHover">
+    <v-card id="base-layer-panel" v-show="baselayerIconHover">
       <div style="margin-bottom: 10px;">
         
         <v-radio-group column v-model="selectedLayer">
@@ -95,13 +95,19 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.layer-button {
-  padding: 6px;
-  vertical-align: middle;
-  font-size: 18px;
-  color: black;
-  float: right;
-  border-radius: 4px;
-  background: #fff;
-}
+  .layer-button {
+    padding: 2px 6px;
+    vertical-align: middle;
+    font-size: 16px;
+    color: black;
+    float: right;
+    width: 26px;
+    height: 26px;
+    border-radius: 5px;
+  }
+
+  #base-layer-panel {
+    padding: 0 10px;
+    top: -16px;
+  }
 </style>
