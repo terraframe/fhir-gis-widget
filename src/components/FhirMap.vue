@@ -1,10 +1,10 @@
 <template>
   <v-container fluid>
     <v-row>
-      <v-col class="d-flex" cols="12" sm="3">
-        <tree :data="treeData" :options="treeOptions" ref="tree" />
+      <v-col v-if="root != null" class="d-flex" cols="12" sm="3">
+        <tree :options="treeOptions" ref="tree" />
       </v-col>
-      <v-col class="d-flex" cols="12" sm="9">
+      <v-col class="d-flex" cols="12" :sm="root != null ? 9 : 12">
         <div id="map-container">
           <v-container id="search-form" fluid>
             <v-form @submit.prevent="onSearch" inline>
@@ -39,7 +39,7 @@
                     outlined
                     v-if="form.selected.system"
                     id="system"
-                    style="margin-left: 5px;"
+                    style="margin-left: 5px"
                     v-model="form.system"
                     placeholder="(opt)"
                     label="System"
@@ -50,7 +50,7 @@
                     outlined
                     v-if="!form.selected.select"
                     id="text"
-                    style="margin-left: 5px;"
+                    style="margin-left: 5px"
                     v-model="form.text"
                     :label="form.selected.label"
                     :placeholder="form.selected.placeholder"
@@ -60,7 +60,7 @@
                     outlined
                     v-if="form.selected.select"
                     id="text"
-                    style="margin-left: 5px;"
+                    style="margin-left: 5px"
                     v-model="form.text"
                     :items="form.selected.select"
                     item-text="sType"
@@ -69,14 +69,31 @@
                 </v-col>
 
                 <v-col class="d-flex" cols="1" sm="1">
-                  <v-text-field filled outlined label="limit" type="number" id="count" v-model="form.count"></v-text-field>
+                  <v-text-field
+                    filled
+                    outlined
+                    label="limit"
+                    type="number"
+                    id="count"
+                    v-model="form.count"
+                  ></v-text-field>
                 </v-col>
 
                 <v-col class="d-flex" cols="1" sm="1">
-                  <v-btn id="search-button" type="submit" variant="primary" v-show="!isLoading" :disabled="isLoading">
+                  <v-btn
+                    id="search-button"
+                    type="submit"
+                    variant="primary"
+                    v-show="!isLoading"
+                    :disabled="isLoading"
+                  >
                     <font-awesome-icon icon="search" />
                   </v-btn>
-                  <v-progress-circular v-if="isLoading" indeterminate color="primary"></v-progress-circular>
+                  <v-progress-circular
+                    v-if="isLoading"
+                    indeterminate
+                    color="primary"
+                  ></v-progress-circular>
                 </v-col>
               </v-row>
             </v-form>
@@ -101,7 +118,7 @@ import LayerPanel from "./LayerPanel";
 
 export default {
   components: {
-    LayerPanel
+    LayerPanel,
   },
   props: {
     accessToken: { type: String, required: true },
@@ -110,14 +127,16 @@ export default {
     center: { type: Array, default: () => [-96, 37.8] },
     zoom: { type: Number, default: 2 },
     root: { type: Number },
-    includeRoot: { type: Boolean, default: true }
+    includeRoot: { type: Boolean, default: true },
+    searchParameters: { type: Array, default: () => [] },
+    filters: { type: Array, default: () => [] }
   },
   data() {
     return {
       treeOptions: {
-        fetchData: node => {
+        fetchData: (node) => {
           return this.getNodes(node);
-        }
+        },
       },
       selected: null,
       isLoading: false,
@@ -127,14 +146,14 @@ export default {
           system: false,
           label: "Name",
           placeholder: "Name..",
-          options: []
+          options: [],
         },
         searchType: "name",
         system: null,
         text: null,
         option: "=",
         count: 20,
-        checked: []
+        checked: [],
       },
       searchTypes: [
         {
@@ -142,48 +161,52 @@ export default {
           system: true,
           label: "Identifier",
           placeholder: "Identifier..",
-          options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"]
+          options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"],
         },
         {
           key: "type",
           system: true,
           label: "Type",
           placeholder: "Type..",
-          options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"]
+          options: ["=", ":text", ":not", ":not-in", ":above", ":below", ":in"],
         },
         {
           key: "status",
           system: false,
           label: "Status",
           select: ["active", "suspended", "inactive"],
-          options: []
+          options: [],
         },
         {
           key: "name",
           system: false,
           label: "Name",
           placeholder: "Name..",
-          options: []
-        }
+          options: [],
+        },
       ],
       collection: {
         type: "FeatureCollection",
-        features: []
-      }
+        features: [],
+      },
     };
   },
   watch: {
-    "form.searchType": function(searchType) {
+    "form.searchType": function (searchType) {
       this.form.selected = this.searchTypes.find(
-        sType => sType.key === searchType
+        (sType) => sType.key === searchType
       );
 
       this.form.option = "=";
-    }
+    },
   },
 
   mounted() {
     mapboxgl.accessToken = this.accessToken;
+
+    if (this.searchParameters != null) {
+      this.searchTypes = this.searchTypes.concat(this.searchParameters);
+    }
 
     if (this.root != null) {
       this.selected = this.root;
@@ -193,18 +216,20 @@ export default {
       container: "map",
       style: "mapbox://styles/mapbox/satellite-v9",
       center: this.center,
-      zoom: this.zoom
+      zoom: this.zoom,
     });
 
     this.map.on("load", () => {
       this.initMap();
     });
 
-    this.$refs.tree.$on("node:selected", e => {
-      this.selected = e.data.id;
+    if (this.$refs.tree != null) {
+      this.$refs.tree.$on("node:selected", (e) => {
+        this.selected = e.data.id;
 
-      this.onSearch();
-    });
+        this.onSearch();
+      });
+    }
   },
   methods: {
     setOption(option) {
@@ -212,11 +237,11 @@ export default {
     },
     refreshContextLayers() {
       // Remove all context layers
-      this.contextServices.forEach(service => {
+      this.contextServices.forEach((service) => {
         if (service.type === "wms") {
           this.removeWMSLayer(service);
         } else if (service.type === "vector") {
-          service.layers.forEach(vectorLayer => {
+          service.layers.forEach((vectorLayer) => {
             this.removeVectorLayer(service, vectorLayer);
           });
         } else {
@@ -231,13 +256,13 @@ export default {
       // Create the enabled layer constructs
       const layers = [];
 
-      this.contextServices.forEach(service => {
-        service.layers.forEach(layer => {
+      this.contextServices.forEach((service) => {
+        service.layers.forEach((layer) => {
           if (layer.active) {
             layers.push({
               service: service,
               layer: layer,
-              level: layer.level ? layer.level : 0
+              level: layer.level ? layer.level : 0,
             });
           }
         });
@@ -247,7 +272,7 @@ export default {
       layers.sort((l1, l2) => l1.level > l2.level);
 
       // Add the enabled layers
-      layers.forEach(l => {
+      layers.forEach((l) => {
         const service = l.service;
 
         if (service.type === "wms") {
@@ -283,20 +308,20 @@ export default {
 
       return this.$http
         .get(url, {
-          params: params
+          params: params,
         })
-        .then(resp => {
+        .then((resp) => {
           const nodes = [];
 
           if (resp.data.entry != null) {
-            resp.data.entry.forEach(entry => {
+            resp.data.entry.forEach((entry) => {
               if (entry.resource) {
                 const resource = entry.resource;
 
                 const node = {
                   text: resource.name,
                   data: { id: resource.resourceType + "/" + resource.id },
-                  isBatch: true
+                  isBatch: true,
                 };
 
                 nodes.push(node);
@@ -315,7 +340,7 @@ export default {
         let url = this.fhirServerUrl + "/Location";
 
         const params = {
-          _count: this.form.count
+          _count: this.form.count,
         };
 
         if (this.selected != null) {
@@ -342,8 +367,12 @@ export default {
           params[attr] = value;
         }
 
+        this.filters.forEach(filter => {
+          params[filter.name] = filter.value
+        });
+
         const response = await this.$http.get(url, {
-          params: params
+          params: params,
         });
 
         // Create the feature collection from the FHIR response
@@ -394,16 +423,16 @@ export default {
               tiles: [layer.url],
               tileSize: 256,
               attribution:
-                'Map tiles by <a target="_top" rel="noopener" href="https://tile.openstreetmap.org/">OpenStreetMap tile servers</a>, under the <a target="_top" rel="noopener" href="https://operations.osmfoundation.org/policies/tiles/">tile usage policy</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>'
-            }
+                'Map tiles by <a target="_top" rel="noopener" href="https://tile.openstreetmap.org/">OpenStreetMap tile servers</a>, under the <a target="_top" rel="noopener" href="https://operations.osmfoundation.org/policies/tiles/">tile usage policy</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>',
+            },
           },
           layers: [
             {
               id: "osm",
               type: "raster",
-              source: "osm"
-            }
-          ]
+              source: "osm",
+            },
+          ],
         });
       }
     },
@@ -414,7 +443,7 @@ export default {
 
       this.map.addSource(source, {
         type: "geojson",
-        data: this.collection
+        data: this.collection,
       });
 
       // Polygon layer
@@ -426,12 +455,18 @@ export default {
         paint: {
           "fill-color": DEFAULT_COLOR,
           "fill-opacity": 0.8,
-          "fill-outline-color": "black"
+          "fill-outline-color": "black",
         },
         filter: [
           "all",
-          ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false]
-        ]
+          [
+            "match",
+            ["geometry-type"],
+            ["Polygon", "MultiPolygon"],
+            true,
+            false,
+          ],
+        ],
       });
 
       // Line layer
@@ -443,7 +478,7 @@ export default {
         paint: {
           "line-color": DEFAULT_COLOR,
           "line-opacity": 0.8,
-          "line-width": 1
+          "line-width": 1,
         },
         filter: [
           "all",
@@ -452,9 +487,9 @@ export default {
             ["geometry-type"],
             ["LineString", "MultiLineString"],
             true,
-            false
-          ]
-        ]
+            false,
+          ],
+        ],
       });
 
       // Point layer
@@ -466,12 +501,12 @@ export default {
           "circle-radius": 10,
           "circle-color": DEFAULT_COLOR,
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#FFFFFF"
+          "circle-stroke-color": "#FFFFFF",
         },
         filter: [
           "all",
-          ["match", ["geometry-type"], ["Point", "MultiPont"], true, false]
-        ]
+          ["match", ["geometry-type"], ["Point", "MultiPont"], true, false],
+        ],
       });
 
       // Label layer
@@ -482,14 +517,14 @@ export default {
         paint: {
           "text-color": "black",
           "text-halo-color": "#fff",
-          "text-halo-width": 2
+          "text-halo-width": 2,
         },
         layout: {
           "text-field": ["get", "name"],
           "text-offset": [0, 0.6],
           "text-anchor": "top",
-          "text-size": 12
-        }
+          "text-size": 12,
+        },
       });
 
       this.refreshContextLayers();
@@ -498,14 +533,14 @@ export default {
       let features = [];
 
       if (payload.entry) {
-        payload.entry.forEach(entry => {
+        payload.entry.forEach((entry) => {
           let hasGeojsonExtension = false;
 
           const resource = entry.resource;
 
           // Use geojson if exists
           if (resource.extension != null) {
-            resource.extension.forEach(extension => {
+            resource.extension.forEach((extension) => {
               if (
                 extension.url ===
                 "http://hl7.org/fhir/StructureDefinition/location-boundary-geojson"
@@ -520,8 +555,8 @@ export default {
                       type: "Feature",
                       geometry: geometry,
                       properties: {
-                        name: resource.name || ""
-                      }
+                        name: resource.name || "",
+                      },
                     };
 
                     features.push(feature);
@@ -535,7 +570,8 @@ export default {
             });
           }
 
-          // Else fall back on the position data if it exists, otherwise do not map the location
+          // Else fall back on the position data if it exists, otherwise do
+          // not map the location
           if (
             !hasGeojsonExtension &&
             resource.position != null &&
@@ -548,12 +584,12 @@ export default {
                 type: "Point",
                 coordinates: [
                   resource.position.longitude,
-                  resource.position.latitude
-                ]
+                  resource.position.latitude,
+                ],
               },
               properties: {
-                name: resource.name || ""
-              }
+                name: resource.name || "",
+              },
             };
 
             features.push(feature);
@@ -571,7 +607,7 @@ export default {
       url +=
         "&LAYERS=" +
         layers
-          .map(function(layer) {
+          .map(function (layer) {
             return encodeURIComponent(layer.name);
           })
           .join(",");
@@ -579,14 +615,14 @@ export default {
       this.map.addSource(service.id + "-source", {
         type: "raster",
         tiles: [url],
-        tileSize: 256
+        tileSize: 256,
       });
       this.map.addLayer(
         {
           id: service.id + "-layer",
           type: "raster",
           source: service.id + "-source",
-          paint: {}
+          paint: {},
         },
         "locations-polygon"
       );
@@ -604,7 +640,7 @@ export default {
 
       this.map.addSource(source, {
         type: "vector",
-        tiles: [layer.url]
+        tiles: [layer.url],
       });
 
       // Point layer
@@ -618,12 +654,12 @@ export default {
             "circle-radius": 10,
             "circle-color": SELECTED_COLOR,
             "circle-stroke-width": 2,
-            "circle-stroke-color": "#FFFFFF"
+            "circle-stroke-color": "#FFFFFF",
           },
           filter: [
             "all",
-            ["match", ["geometry-type"], ["Point", "MultiPont"], true, false]
-          ]
+            ["match", ["geometry-type"], ["Point", "MultiPont"], true, false],
+          ],
         },
         "locations-polygon"
       );
@@ -637,7 +673,7 @@ export default {
         paint: {
           "line-color": SELECTED_COLOR,
           "line-opacity": 0.8,
-          "line-width": 1
+          "line-width": 1,
         },
         filter: [
           "all",
@@ -646,9 +682,9 @@ export default {
             ["geometry-type"],
             ["LineString", "MultiLineString"],
             true,
-            false
-          ]
-        ]
+            false,
+          ],
+        ],
       });
 
       // Polygon layer
@@ -662,7 +698,7 @@ export default {
           paint: {
             "fill-color": SELECTED_COLOR,
             "fill-opacity": 0.8,
-            "fill-outline-color": "black"
+            "fill-outline-color": "black",
           },
           filter: [
             "all",
@@ -671,9 +707,9 @@ export default {
               ["geometry-type"],
               ["Polygon", "MultiPolygon"],
               true,
-              false
-            ]
-          ]
+              false,
+            ],
+          ],
         },
         "locations-polygon"
       );
@@ -688,7 +724,7 @@ export default {
           paint: {
             "text-color": "black",
             "text-halo-color": "#fff",
-            "text-halo-width": 2
+            "text-halo-width": 2,
           },
           layout: {
             "text-field": [
@@ -697,14 +733,14 @@ export default {
               [
                 "coalesce",
                 ["string", ["get", "displayLabel_" + service.locale]],
-                ["string", ["get", "displayLabel"]]
+                ["string", ["get", "displayLabel"]],
               ],
-              ["string", ["get", "displayLabel"]]
+              ["string", ["get", "displayLabel"]],
             ],
             "text-offset": [0, 0.6],
             "text-anchor": "top",
-            "text-size": 12
-          }
+            "text-size": 12,
+          },
         },
         "locations-polygon"
       );
@@ -719,57 +755,55 @@ export default {
         this.map.removeLayer(source + "-label");
         this.map.removeSource(source);
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-  @import "~mapbox-gl/dist/mapbox-gl.css";
+@import "~mapbox-gl/dist/mapbox-gl.css";
 
-  #map-container {
-    position: relative;
-    width: 100%;
-  }
+#map-container {
+  position: relative;
+  width: 100%;
+}
 
-  #search-form {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-  }
+#search-form {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+}
 
-  #search-button {
-    height: 56px;
-  }
+#search-button {
+  height: 56px;
+}
 
-  .v-input {
-  
-  }
+.v-input {
+}
 
-  /deep/ .theme--light.v-text-field--filled > .v-input__control > .v-input__slot {
-        background: rgb(255, 255, 255) !important;
-  }
+/deep/ .theme--light.v-text-field--filled > .v-input__control > .v-input__slot {
+  background: rgb(255, 255, 255) !important;
+}
 
+.search-prepend {
+  margin-left: 5px;
+}
 
-  .search-prepend {
-    margin-left: 5px;
-  }
+.layer-button {
+  width: 29px;
+  height: 29px;
+}
 
-  .layer-button {
-    width: 29px;
-    height: 29px;
-  }
-
-  .layer-toggle {
-    position: absolute;
-    right: 0px;
-    top: 90px;
-    z-index: 10;
-    margin: 10px 9px 0 0;
-    border: solid 2.5px rgba(211,211,211,.7);
-    border-radius: 5px;
-    background: #fff;
-  }
+.layer-toggle {
+  position: absolute;
+  right: 0px;
+  top: 90px;
+  z-index: 10;
+  margin: 10px 9px 0 0;
+  border: solid 2.5px rgba(211, 211, 211, 0.7);
+  border-radius: 5px;
+  background: #fff;
+}
 </style>

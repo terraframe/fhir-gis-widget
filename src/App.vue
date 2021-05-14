@@ -6,14 +6,16 @@
       :center="center"
       :zoom="zoom"
       :contextServices="contextServices"
-      root="1351"
+      :searchParameters="searchParameters"
+      :root="1352"
+      :filters="filters"
     />
   </v-app>
 </template>
 
 <script>
 import FhirMap from "./components/FhirMap.vue";
-import contextServices from "./config/contex.json"
+import contextServices from "./config/contex.json";
 
 export default {
   name: "App",
@@ -22,32 +24,42 @@ export default {
     fhirServerUrl: process.env.VUE_APP_FHIR_BASE_URL,
     center: [
       parseFloat(process.env.VUE_APP_CENTER_X),
-      parseFloat(process.env.VUE_APP_CENTER_Y)
+      parseFloat(process.env.VUE_APP_CENTER_Y),
     ],
     zoom: parseInt(process.env.VUE_APP_ZOOM),
-    contextServices: contextServices
+    contextServices: contextServices,
+    searchParameters: [
+      {
+        key: "physicalType",
+        system: false,
+        label: "Physical Type",
+        placeholder: "Physical Type..",
+        options: [],
+      },
+    ],
+    filters: [{ name: "physicalType", value: "si" }],
   }),
 
   components: {
-    FhirMap
-  }
+    FhirMap,
+  },
 };
 </script>
 
 <style>
-  html {
-    overflow: hidden;
-  }
+html {
+  overflow: hidden;
+}
 
-  #app {
-    font-family: Avenir, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    color: #2c3e50;
-  }
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #2c3e50;
+}
 
-  .map-view-port {
-    width: 100%;
-    height: calc(100vh - 24px);
-  }
+.map-view-port {
+  width: 100%;
+  height: calc(100vh - 24px);
+}
 </style>
