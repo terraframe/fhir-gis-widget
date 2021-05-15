@@ -1,10 +1,10 @@
 <template>
   <v-container fluid>
     <v-row>
-      <v-col v-if="root != null" class="d-flex" cols="12" sm="3">
+      <v-col v-if="options.root != null" class="d-flex" cols="12" sm="3">
         <tree :options="treeOptions" ref="tree" />
       </v-col>
-      <v-col class="d-flex" cols="12" :sm="root != null ? 9 : 12">
+      <v-col class="d-flex" cols="12" :sm="options.root != null ? 9 : 12">
         <div id="map-container">
           <v-container id="search-form" fluid>
             <v-form @submit.prevent="onSearch" inline>
@@ -101,7 +101,7 @@
           <LayerPanel
             v-on:baselayer="onChangeBaseLayer"
             v-on:contextchange="refreshContextLayers"
-            :contextServices="contextServices"
+            :contextServices="options.contextServices"
           ></LayerPanel>
           <div id="map" class="map-view-port"></div>
         </div>
@@ -123,13 +123,19 @@ export default {
   props: {
     accessToken: { type: String, required: true },
     fhirServerUrl: { type: String, required: true },
-    contextServices: { type: Array, default: () => [] },
-    center: { type: Array, default: () => [-96, 37.8] },
-    zoom: { type: Number, default: 2 },
-    root: { type: Number },
-    includeRoot: { type: Boolean, default: true },
-    searchParameters: { type: Array, default: () => [] },
-    filters: { type: Array, default: () => [] }
+    options: {
+      type: Object,
+      default: () => {
+        return {
+          contextServices: [],
+          center: [-96, 37.8],
+          zoom: 2,
+          includeRoot: true,
+          searchParameters: [],
+          filters: [],
+        };
+      },
+    },
   },
   data() {
     return {
@@ -204,19 +210,19 @@ export default {
   mounted() {
     mapboxgl.accessToken = this.accessToken;
 
-    if (this.searchParameters != null) {
-      this.searchTypes = this.searchTypes.concat(this.searchParameters);
+    if (this.options.searchParameters != null) {
+      this.searchTypes = this.searchTypes.concat(this.options.searchParameters);
     }
 
-    if (this.root != null) {
-      this.selected = this.root;
+    if (this.options.root != null) {
+      this.selected = this.options.root;
     }
 
     this.map = new mapboxgl.Map({
       container: "map",
       style: "mapbox://styles/mapbox/satellite-v9",
-      center: this.center,
-      zoom: this.zoom,
+      center: this.options.center,
+      zoom: this.options.zoom,
     });
 
     this.map.on("load", () => {
@@ -237,7 +243,7 @@ export default {
     },
     refreshContextLayers() {
       // Remove all context layers
-      this.contextServices.forEach((service) => {
+      this.options.contextServices.forEach((service) => {
         if (service.type === "wms") {
           this.removeWMSLayer(service);
         } else if (service.type === "vector") {
@@ -256,7 +262,7 @@ export default {
       // Create the enabled layer constructs
       const layers = [];
 
-      this.contextServices.forEach((service) => {
+      this.options.contextServices.forEach((service) => {
         service.layers.forEach((layer) => {
           if (layer.active) {
             layers.push({
@@ -295,11 +301,11 @@ export default {
       const params = {};
 
       if (node.id === "root") {
-        if (this.root != null) {
-          if (this.includeRoot) {
-            params["_id"] = this.root;
+        if (this.options.root != null) {
+          if (this.options.includeRoot) {
+            params["_id"] = this.options.root;
           } else {
-            params.partof = "Location/" + this.root;
+            params.partof = "Location/" + this.options.root;
           }
         }
       } else {
@@ -367,8 +373,8 @@ export default {
           params[attr] = value;
         }
 
-        this.filters.forEach(filter => {
-          params[filter.name] = filter.value
+        this.filters.forEach((filter) => {
+          params[filter.name] = filter.value;
         });
 
         const response = await this.$http.get(url, {

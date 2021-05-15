@@ -3,41 +3,21 @@
     <FhirMap
       :accessToken="accessToken"
       :fhirServerUrl="fhirServerUrl"
-      :center="center"
-      :zoom="zoom"
-      :contextServices="contextServices"
-      :searchParameters="searchParameters"
-      :root="1352"
-      :filters="filters"
+      :options="options"
     />
   </v-app>
 </template>
 
 <script>
 import FhirMap from "./components/FhirMap.vue";
-import contextServices from "./config/contex.json";
+import options from "./config/options.json";
 
 export default {
   name: "App",
   data: () => ({
     accessToken: process.env.VUE_APP_MAPBOX_API_KEY,
     fhirServerUrl: process.env.VUE_APP_FHIR_BASE_URL,
-    center: [
-      parseFloat(process.env.VUE_APP_CENTER_X),
-      parseFloat(process.env.VUE_APP_CENTER_Y),
-    ],
-    zoom: parseInt(process.env.VUE_APP_ZOOM),
-    contextServices: contextServices,
-    searchParameters: [
-      {
-        key: "physicalType",
-        system: false,
-        label: "Physical Type",
-        placeholder: "Physical Type..",
-        options: [],
-      },
-    ],
-    filters: [{ name: "physicalType", value: "si" }],
+    options: options
   }),
 
   components: {

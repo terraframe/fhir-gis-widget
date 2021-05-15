@@ -1,0 +1,55 @@
+{
+	"center":[
+	   104.81391,
+	   12.570423
+	],
+	"zoom":3,
+	"root":1352,
+	"includeRoot":true,
+	"contextServices":[
+	   {
+		  "id":"cgr-geoserver",
+		  "type":"wms",
+		  "vendor":"geoserver",
+		  "label":"CGR geoserver",
+		  "url":"https://localhost:8443/geoserver/georegistry/wms",
+		  "layers":[
+			 {
+				"label":"Districts",
+				"name":"georegistry:ml_0district",
+				"level":2
+			 }
+		  ]
+	   },
+	   {
+		  "type":"vector",
+		  "label":"CGR vector",
+		  "locale":"en",
+		  "layers":[
+			 {
+				"name":"d1",
+				"label":"Cambodia 2021-03-31",
+				"url":"https://localhost:8443/georegistry/master-list/tile?x={x}&y={y}&z={z}&config=%7B%22oid%22%3A%22c150e6e2-2bea-4b70-ac76-33eb600005f1%22%7D",
+				"level":0
+			 }
+		  ]
+	   }
+	],
+	"searchParameters":[
+	   {
+		  "key":"physicalType",
+		  "system":false,
+		  "label":"Physical Type",
+		  "placeholder":"Physical Type..",
+		  "options":[
+			 
+		  ]
+	   }
+	],
+	"filters":[
+	   {
+		  "name":"physicalType",
+		  "value":"si"
+	   }
+	]
+ }
