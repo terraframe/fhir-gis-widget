@@ -1,103 +1,104 @@
 <template>
   <v-container fluid>
     <v-row>
-      <v-col v-if="options.root != null" class="d-flex" cols="12" sm="3">
-        <tree :options="treeOptions" ref="tree" />
-      </v-col>
-      <v-col class="d-flex" cols="12" :sm="options.root != null ? 9 : 12">
-        <div id="map-container">
-          <v-container id="search-form" fluid>
-            <v-form @submit.prevent="onSearch" inline>
-              <v-row>
-                <v-col class="d-flex" cols="3" sm="3">
-                  <v-select
-                    filled
-                    outlined
-                    id="searchType"
-                    class="select-input"
-                    v-model="form.searchType"
-                    :items="searchTypes"
-                    item-text="label"
-                    item-value="key"
-                    required
-                  ></v-select>
-                </v-col>
+      <v-col class="d-flex" cols="12" sm="3">
+        <v-tabs
+          v-model="tab"
+          background-color="deep-purple accent-4"
+          class="elevation-2"
+          dark
+        >
+          <v-tabs-slider></v-tabs-slider>
 
-                <v-col class="d-flex" cols="5" sm="5">
-                  <v-select
-                    v-if="form.selected.options.length > 0"
-                    filled
-                    outlined
-                    v-model="form.option"
-                    :items="form.selected.options"
-                    item-text="label"
-                    item-value="key"
-                  ></v-select>
+          <v-tab key="Search" href="#tab-search"> Search </v-tab>
+          <v-tab key="Tree" href="#tab-tree"> Hierarchies </v-tab>
 
-                  <v-text-field
-                    filled
-                    outlined
-                    v-if="form.selected.system"
-                    id="system"
-                    style="margin-left: 5px"
-                    v-model="form.system"
-                    placeholder="(opt)"
-                    label="System"
-                  ></v-text-field>
+          <v-tab-item key="Search" value="tab-search">
+            <v-form @submit.prevent="onSearch">
+              <v-select
+                filled
+                outlined
+                id="searchType"
+                class="select-input"
+                v-model="form.searchType"
+                :items="searchTypes"
+                item-text="label"
+                item-value="key"
+                required
+              ></v-select>
+              <v-select
+                v-if="form.selected.options.length > 0"
+                filled
+                outlined
+                v-model="form.option"
+                :items="form.selected.options"
+                item-text="label"
+                item-value="key"
+              ></v-select>
 
-                  <v-text-field
-                    filled
-                    outlined
-                    v-if="!form.selected.select"
-                    id="text"
-                    style="margin-left: 5px"
-                    v-model="form.text"
-                    :label="form.selected.label"
-                    :placeholder="form.selected.placeholder"
-                  ></v-text-field>
-                  <v-select
-                    filled
-                    outlined
-                    v-if="form.selected.select"
-                    id="text"
-                    style="margin-left: 5px"
-                    v-model="form.text"
-                    :items="form.selected.select"
-                    item-text="sType"
-                    item-value="sType"
-                  ></v-select>
-                </v-col>
+              <v-text-field
+                filled
+                outlined
+                v-if="form.selected.system"
+                id="system"
+                style="margin-left: 5px"
+                v-model="form.system"
+                placeholder="(opt)"
+                label="System"
+              ></v-text-field>
 
-                <v-col class="d-flex" cols="1" sm="1">
-                  <v-text-field
-                    filled
-                    outlined
-                    label="limit"
-                    type="number"
-                    id="count"
-                    v-model="form.count"
-                  ></v-text-field>
-                </v-col>
-
-                <v-col class="d-flex" cols="1" sm="1">
-                  <v-btn
-                    id="search-button"
-                    type="submit"
-                    variant="primary"
-                    v-show="!isLoading"
-                    :disabled="isLoading"
-                  >
-                    <font-awesome-icon icon="search" />
-                  </v-btn>
-                  <v-progress-circular
-                    v-if="isLoading"
-                    indeterminate
-                    color="primary"
-                  ></v-progress-circular>
-                </v-col>
-              </v-row>
+              <v-text-field
+                filled
+                outlined
+                v-if="!form.selected.select"
+                id="text"
+                style="margin-left: 5px"
+                v-model="form.text"
+                :label="form.selected.label"
+                :placeholder="form.selected.placeholder"
+              ></v-text-field>
+              <v-select
+                filled
+                outlined
+                v-if="form.selected.select"
+                id="text"
+                style="margin-left: 5px"
+                v-model="form.text"
+                :items="form.selected.select"
+                item-text="sType"
+                item-value="sType"
+              ></v-select>
+              <v-text-field
+                filled
+                outlined
+                label="limit"
+                type="number"
+                id="count"
+                v-model="form.count"
+              ></v-text-field>
+              <v-btn
+                id="search-button"
+                type="submit"
+                variant="primary"
+                v-show="!isLoading"
+                :disabled="isLoading"
+              >
+                Search
+              </v-btn>
+              <v-progress-circular
+                v-if="isLoading"
+                indeterminate
+                color="primary"
+              ></v-progress-circular>
             </v-form>
-          </v-container>
+          </v-tab-item>
+          <v-tab-item key="Tree" value="tab-tree">
+            <tree :options="treeOptions" @node:selected="onNodeSelected" />
+          </v-tab-item>
+        </v-tabs>
+      </v-col>
+      <v-col class="d-flex" cols="12" sm="9">
+        <div id="map-container">
           <LayerPanel
             v-on:baselayer="onChangeBaseLayer"
             v-on:contextchange="refreshContextLayers"
@@ -144,6 +145,7 @@ export default {
           return this.getNodes(node);
         },
       },
+      tab: "tab-search",
       selected: null,
       isLoading: false,
       form: {
@@ -195,6 +197,10 @@ export default {
         type: "FeatureCollection",
         features: [],
       },
+      parents: {
+        type: "FeatureCollection",
+        features: [],
+      },
     };
   },
   watch: {
@@ -228,16 +234,13 @@ export default {
     this.map.on("load", () => {
       this.initMap();
     });
-
-    if (this.$refs.tree != null) {
-      this.$refs.tree.$on("node:selected", (e) => {
-        this.selected = e.data.id;
-
-        this.onSearch();
-      });
-    }
   },
   methods: {
+    onNodeSelected(node) {
+      this.selected = node.data.id;
+
+      this.onSearch();
+    },
     setOption(option) {
       this.form.option = option;
     },
@@ -342,40 +345,49 @@ export default {
       try {
         this.isLoading = true;
 
+        this.parents = {
+          type: "FeatureCollection",
+          features: [],
+        };
+
         // Build the search URL
         let url = this.fhirServerUrl + "/Location";
 
-        const params = {
-          _count: this.form.count,
-        };
+        var params = new URLSearchParams();
 
-        if (this.selected != null) {
-          params.partof = this.selected;
-        }
-
-        // Recurive include for location
-        params["_revinclude"] = "Location:partof";
-
-        // Include the search parameters if there are any
-        if (this.form.text) {
-          let value = this.form.text;
-
-          if (this.form.selected.system && this.form.system) {
-            value = this.form.system + "|" + this.form.text;
+        if (this.tab !== "tab-search") {
+          if (this.selected != null) {
+            params.append("partof", this.selected);
           }
 
-          let attr = this.form.selected.key;
+          // Recurive include for location
+          params.append("_revinclude", "Location:partof");
+        } else {
+          params.append("_count", this.form.count);
 
-          if (this.form.option !== "=") {
-            attr += this.form.option;
+          // Include the search parameters if there are any
+          if (this.form.text) {
+            let value = this.form.text;
+
+            if (this.form.selected.system && this.form.system) {
+              value = this.form.system + "|" + this.form.text;
+            }
+
+            let attr = this.form.selected.key;
+
+            if (this.form.option !== "=") {
+              attr += this.form.option;
+            }
+
+            params.append(attr, value);
           }
-
-          params[attr] = value;
         }
 
-        this.filters.forEach((filter) => {
-          params[filter.name] = filter.value;
-        });
+        if (this.options.filters) {
+          this.options.filters.forEach((filter) => {
+            params.append(filter.name, filter.value);
+          });
+        }
 
         const response = await this.$http.get(url, {
           params: params,
@@ -386,6 +398,28 @@ export default {
 
         // Update the map results
         this.map.getSource("locations").setData(this.collection);
+
+        // Update the parents layer
+        if (this.tab !== "tab-search") {
+          if (this.selected != null) {
+            this.parents = {
+              type: "FeatureCollection",
+              features: [],
+            };
+
+            // Get the parent
+            const response = await this.$http.get(url, {
+              params: {
+                _id: this.selected,
+              },
+            });
+
+            // Create the feature collection from the FHIR response
+            this.parents = this.createFeatureCollection(response.data);
+          }
+        }
+
+        this.map.getSource("parents").setData(this.parents);
 
         // Zoom to the results on the map
         if (this.collection.features.length > 0) {
@@ -442,10 +476,13 @@ export default {
         });
       }
     },
-    addLayers() {
-      const DEFAULT_COLOR = "#80cdc1";
-
-      const source = "locations";
+    addLocationLayers() {
+      this.addGeojsonLayers("locations", "#80cdc1")
+    },
+    addParentLayers() {
+      this.addGeojsonLayers("parents", "#d3d3d3")
+    },
+    addGeojsonLayers(source, color) {
 
       this.map.addSource(source, {
         type: "geojson",
@@ -459,7 +496,7 @@ export default {
         source: source,
         layout: {},
         paint: {
-          "fill-color": DEFAULT_COLOR,
+          "fill-color": color,
           "fill-opacity": 0.8,
           "fill-outline-color": "black",
         },
@@ -482,7 +519,7 @@ export default {
         source: source,
         layout: {},
         paint: {
-          "line-color": DEFAULT_COLOR,
+          "line-color": color,
           "line-opacity": 0.8,
           "line-width": 1,
         },
@@ -505,7 +542,7 @@ export default {
         source: source,
         paint: {
           "circle-radius": 10,
-          "circle-color": DEFAULT_COLOR,
+          "circle-color": color,
           "circle-stroke-width": 2,
           "circle-stroke-color": "#FFFFFF",
         },
@@ -532,6 +569,12 @@ export default {
           "text-size": 12,
         },
       });
+    },
+
+    addLayers() {
+      this.addParentLayers();
+
+      this.addLocationLayers();
 
       this.refreshContextLayers();
     },

@@ -1,26 +1,21 @@
 {
-  "name": "fhir-gis-widget",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@terraframe/fhir-gis-widget",
+  "version": "0.0.1",
+  "private": false,
   "scripts": {
     "serve": "vue-cli-service serve --port 8090",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "build-bundle": "vue-cli-service build --target lib --name fhir-gis-widget ./src/components/FhirMap.vue"
   },
+  "author": "TerraFrame",
+  "license": "Apache-2.0",
   "main": "dist/fhir-gis-widget.umd.js",
   "module": "dist/fhir-gis-widget.esm.js",
   "browser": {
     "./sfc": "src/components/FhirMap.vue"
   },
   "unpkg": "dist/fhir-gis-widget.min.js",
-  "files": [
-    "dist/*",
-    "src/*",
-    "public/*",
-    "*.json",
-    "*.js"
-  ],
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.35",
     "@fortawesome/free-solid-svg-icons": "^5.15.3",
