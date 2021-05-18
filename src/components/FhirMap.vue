@@ -237,9 +237,11 @@ export default {
   },
   methods: {
     onNodeSelected(node) {
-      this.selected = node.data.id;
+      if (node.data != null && node.data.url == null) {
+        this.selected = node.data.id;
 
-      this.onSearch();
+        this.onSearch();
+      }
     },
     setOption(option) {
       this.form.option = option;
@@ -298,48 +300,107 @@ export default {
       });
     },
     getNodes(node) {
-      // Build the search URL
-      let url = this.fhirServerUrl + "/Location";
-
-      const params = {};
-
-      if (node.id === "root") {
-        if (this.options.root != null) {
-          if (this.options.includeRoot) {
-            params["_id"] = this.options.root;
-          } else {
-            params.partof = "Location/" + this.options.root;
-          }
-        }
-      } else {
-        params.partof = node.data.id;
-      }
-
-      return this.$http
-        .get(url, {
-          params: params,
-        })
-        .then((resp) => {
-          const nodes = [];
-
+      if (node.data != null && node.data.url != null) {
+        // Handle the pagination node
+        return this.$http.get(node.data.url, {}).then((resp) => {
           if (resp.data.entry != null) {
             resp.data.entry.forEach((entry) => {
               if (entry.resource) {
                 const resource = entry.resource;
 
-                const node = {
+                const treeNode = {
                   text: resource.name,
                   data: { id: resource.resourceType + "/" + resource.id },
                   isBatch: true,
                 };
 
-                nodes.push(node);
+                node.data.node.append(treeNode);
               }
             });
+
+            if (resp.data.link != null) {
+              const next = resp.data.link.find(
+                (element) => element.relation === "next"
+              );
+
+              if (next != null) {
+                const treeNode = {
+                  text: "...",
+                  data: { url: next.url, node: node.data.node },
+                  isBatch: true,
+                };
+
+                node.data.node.append(treeNode);
+              }
+            }
           }
 
-          return nodes;
+          node.remove();
+
+          return [];
         });
+      } else {
+        // Expand a normal node
+
+        // First build the search URL
+        let url = this.fhirServerUrl + "/Location";
+
+        const params = {};
+
+        if (node.id === "root") {
+          if (this.options.root != null) {
+            if (this.options.includeRoot) {
+              params["_id"] = this.options.root;
+            } else {
+              params.partof = "Location/" + this.options.root;
+            }
+          }
+        } else {
+          params.partof = node.data.id;
+        }
+
+        return this.$http
+          .get(url, {
+            params: params,
+          })
+          .then((resp) => {
+            const nodes = [];
+
+            if (resp.data.entry != null) {
+              resp.data.entry.forEach((entry) => {
+                if (entry.resource) {
+                  const resource = entry.resource;
+
+                  const treeNode = {
+                    text: resource.name,
+                    data: { id: resource.resourceType + "/" + resource.id },
+                    isBatch: true,
+                  };
+
+                  nodes.push(treeNode);
+                }
+              });
+
+              if (resp.data.link != null) {
+                const next = resp.data.link.find(
+                  (element) => element.relation === "next"
+                );
+
+                if (next != null) {
+                  const treeNode = {
+                    text: "...",
+                    data: { url: next.url, node: node },
+                    isBatch: true,
+                  };
+
+                  nodes.push(treeNode);
+                }
+              }
+            }
+
+            return nodes;
+          });
+      }
     },
     async onSearch() {
       try {
@@ -477,13 +538,12 @@ export default {
       }
     },
     addLocationLayers() {
-      this.addGeojsonLayers("locations", "#80cdc1")
+      this.addGeojsonLayers("locations", "#80cdc1");
     },
     addParentLayers() {
-      this.addGeojsonLayers("parents", "#d3d3d3")
+      this.addGeojsonLayers("parents", "#d3d3d3");
     },
     addGeojsonLayers(source, color) {
-
       this.map.addSource(source, {
         type: "geojson",
         data: this.collection,
