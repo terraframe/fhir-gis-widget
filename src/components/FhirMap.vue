@@ -482,9 +482,19 @@ export default {
 
         this.map.getSource("parents").setData(this.parents);
 
+        // Get bounds of all features
+        let union = {
+          type: "FeatureCollection",
+          features: [],
+        };
+
+        union.features = union.features.concat(this.collection.features);
+        union.features = union.features.concat(this.parents.features);
+
         // Zoom to the results on the map
-        if (this.collection.features.length > 0) {
-          var bounds = bbox(this.collection);
+        if (union.features.length > 0) {
+          let bounds = bbox(union);
+
           this.map.fitBounds(bounds, { padding: 20 });
         }
       } catch (err) {
