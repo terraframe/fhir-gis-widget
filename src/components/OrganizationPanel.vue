@@ -7,7 +7,7 @@
           <font-awesome-icon
             v-if="node.data == null || node.data.url == null"
             icon="map-pin"
-            v-on:click.prevent="handleClick(node)"
+            v-on:click.stop="handleClick(node)"
           />
         </template>
       </span>
@@ -21,7 +21,7 @@
       >
         <font-awesome-icon icon="angle-double-left" />
       </v-list-item>
-      <v-subheader> Locations managed by {{node.text}} </v-subheader>
+      <v-subheader> Locations managed by {{ node.text }} </v-subheader>
       <v-list-item-group color="primary">
         <v-list-item v-for="(item, i) in items" :key="i">
           <v-list-item-content v-on:click="onNodeSelected(item)">
@@ -54,7 +54,12 @@ export default {
   mounted() {},
   methods: {
     onNodeSelected(node) {
-      this.$emit("select", node);
+      // Handle the pagination node
+      if (node.data != null && node.data.url != null) {
+        this.getLocations(node);
+      } else {
+        this.$emit("select", node);
+      }
     },
     getNodes(node) {
       if (node.data != null && node.data.url != null) {
@@ -170,20 +175,8 @@ export default {
       this.getLocations(node);
     },
     getLocations(node) {
-      // Expand a normal node
-
-      // First build the search URL
-      let url = this.fhirServerUrl + "/Location";
-
-      const params = {
-        organization: node.data.id,
-      };
-
-      this.$http
-        .get(url, {
-          params: params,
-        })
-        .then((resp) => {
+      if (node.data != null && node.data.url != null) {
+        this.$http.get(node.data.url, {}).then((resp) => {
           const nodes = [];
 
           if (resp.data.entry != null) {
@@ -197,7 +190,7 @@ export default {
                   isBatch: true,
                 };
 
-                nodes.push(treeNode);
+                nodes.append(treeNode);
               }
             });
 
@@ -209,18 +202,76 @@ export default {
               if (next != null) {
                 const treeNode = {
                   text: "...",
-                  data: { url: next.url, node: node },
+                  data: { url: next.url, node: node.data.node },
                   isBatch: true,
                 };
 
-                nodes.push(treeNode);
+                nodes.append(treeNode);
               }
             }
           }
 
-          this.items = nodes;
-          this.mode = "LIST";
+          this.items = this.items.concat(nodes);
+
+          // Remove the clicked on node
+          const index = this.items.findIndex(
+            (n) => n.data.url != null && n.data.url === node.data.url
+          );
+
+          if (index != -1) {
+            this.items = this.items.splice(index, 1);
+          }
         });
+      } else {
+        let url = this.fhirServerUrl + "/Location";
+
+        const params = {
+          organization: node.data.id,
+        };
+
+        this.$http
+          .get(url, {
+            params: params,
+          })
+          .then((resp) => {
+            const nodes = [];
+
+            if (resp.data.entry != null) {
+              resp.data.entry.forEach((entry) => {
+                if (entry.resource) {
+                  const resource = entry.resource;
+
+                  const treeNode = {
+                    text: resource.name,
+                    data: { id: resource.resourceType + "/" + resource.id },
+                    isBatch: true,
+                  };
+
+                  nodes.push(treeNode);
+                }
+              });
+
+              if (resp.data.link != null) {
+                const next = resp.data.link.find(
+                  (element) => element.relation === "next"
+                );
+
+                if (next != null) {
+                  const treeNode = {
+                    text: "...",
+                    data: { url: next.url, node: node },
+                    isBatch: true,
+                  };
+
+                  nodes.push(treeNode);
+                }
+              }
+            }
+
+            this.items = nodes;
+            this.mode = "LIST";
+          });
+      }
     },
   },
 };

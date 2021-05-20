@@ -7,7 +7,7 @@
           <font-awesome-icon
             v-if="node.data == null || node.data.url == null"
             icon="map-pin"
-            v-on:click.prevent="handleClick(node)"
+            v-on:click.stop="handleClick(node)"
           />
         </template>
       </span>
