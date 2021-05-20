@@ -94,15 +94,16 @@
             </v-form>
           </v-tab-item>
           <v-tab-item key="Tree" value="tab-tree">
-            <tree
-              :options="treeOptions"
-              @node:selected="onNodeSelected"
-              ref="nodeTree"
-            />
+            <LocationPanel
+              :fhirServerUrl="fhirServerUrl"
+              :options="options"
+            ></LocationPanel>
           </v-tab-item>
           <v-tab-item key="Orgs" value="tab-org">
-            <tree :options="orgOptions" ref="orgTree" >
-            </tree>
+            <OrganizationPanel
+              :fhirServerUrl="fhirServerUrl"
+              v-on:select="onNodeSelected"
+            ></OrganizationPanel>
           </v-tab-item>
         </v-tabs>
       </v-col>
@@ -125,10 +126,14 @@ import mapboxgl from "mapbox-gl";
 import bbox from "@turf/bbox";
 
 import LayerPanel from "./LayerPanel";
+import OrganizationPanel from "./OrganizationPanel";
+import LocationPanel from "./LocationPanel";
 
 export default {
   components: {
     LayerPanel,
+    OrganizationPanel,
+    LocationPanel,
   },
   props: {
     accessToken: { type: String, required: true },
@@ -149,16 +154,6 @@ export default {
   },
   data() {
     return {
-      treeOptions: {
-        fetchData: (node) => {
-          return this.getNodes(node);
-        },
-      },
-      orgOptions: {
-        fetchData: (node) => {
-          return this.getOrgNodes(node);
-        },
-      },
       tab: "tab-search",
       selected: null,
       isLoading: false,
@@ -215,6 +210,9 @@ export default {
         type: "FeatureCollection",
         features: [],
       },
+      locations: [],
+      mode: "ORG",
+      orgs: [],
     };
   },
   watch: {
@@ -312,117 +310,6 @@ export default {
           );
         }
       });
-    },
-    getNodes(node) {
-      if (node.data != null && node.data.url != null) {
-        // Handle the pagination node
-        return this.$http.get(node.data.url, {}).then((resp) => {
-          if (resp.data.entry != null) {
-            resp.data.entry.forEach((entry) => {
-              if (entry.resource) {
-                const resource = entry.resource;
-
-                const treeNode = {
-                  text: resource.name,
-                  data: { id: resource.resourceType + "/" + resource.id },
-                  isBatch: true,
-                };
-
-                if (node.data.node.id === "root") {
-                  this.$refs.nodeTree.append(treeNode);
-                } else {
-                  node.data.node.append(treeNode);
-                }
-              }
-            });
-
-            if (resp.data.link != null) {
-              const next = resp.data.link.find(
-                (element) => element.relation === "next"
-              );
-
-              if (next != null) {
-                const treeNode = {
-                  text: "...",
-                  data: { url: next.url, node: node.data.node },
-                  isBatch: true,
-                };
-
-                if (node.data.node.id === "root") {
-                  this.$refs.nodeTree.append(treeNode);
-                } else {
-                  node.data.node.append(treeNode);
-                }
-              }
-            }
-          }
-
-          node.remove();
-
-          return [];
-        });
-      } else {
-        // Expand a normal node
-
-        // First build the search URL
-        let url = this.fhirServerUrl + "/Location";
-
-        const params = {};
-
-        if (node.id === "root") {
-          if (this.options.root != null) {
-            if (this.options.includeRoot) {
-              params["_id"] = this.options.root;
-            } else {
-              params.partof = "Location/" + this.options.root;
-            }
-          }
-        } else {
-          params.partof = node.data.id;
-        }
-
-        return this.$http
-          .get(url, {
-            params: params,
-          })
-          .then((resp) => {
-            const nodes = [];
-
-            if (resp.data.entry != null) {
-              resp.data.entry.forEach((entry) => {
-                if (entry.resource) {
-                  const resource = entry.resource;
-
-                  const treeNode = {
-                    text: resource.name,
-                    data: { id: resource.resourceType + "/" + resource.id },
-                    isBatch: true,
-                  };
-
-                  nodes.push(treeNode);
-                }
-              });
-
-              if (resp.data.link != null) {
-                const next = resp.data.link.find(
-                  (element) => element.relation === "next"
-                );
-
-                if (next != null) {
-                  const treeNode = {
-                    text: "...",
-                    data: { url: next.url, node: node },
-                    isBatch: true,
-                  };
-
-                  nodes.push(treeNode);
-                }
-              }
-            }
-
-            return nodes;
-          });
-      }
     },
     async onSearch() {
       try {
@@ -895,113 +782,6 @@ export default {
         this.map.removeLayer(source + "-polygon");
         this.map.removeLayer(source + "-label");
         this.map.removeSource(source);
-      }
-    },
-    getOrgNodes(node) {
-      if (node.data != null && node.data.url != null) {
-        // Handle the pagination node
-        return this.$http.get(node.data.url, {}).then((resp) => {
-          if (resp.data.entry != null) {
-            resp.data.entry.forEach((entry) => {
-              if (entry.resource) {
-                const resource = entry.resource;
-
-                const treeNode = {
-                  text: resource.name,
-                  data: { id: resource.resourceType + "/" + resource.id },
-                  isBatch: true,
-                };
-
-                if (node.data.node.id === "root") {
-                  this.$refs.orgTree.append(treeNode);
-                } else {
-                  node.data.node.append(treeNode);
-                }
-              }
-            });
-
-            if (resp.data.link != null) {
-              const next = resp.data.link.find(
-                (element) => element.relation === "next"
-              );
-
-              if (next != null) {
-                const treeNode = {
-                  text: "...",
-                  data: { url: next.url, node: node.data.node },
-                  isBatch: true,
-                };
-
-                if (node.data.node.id === "root") {
-                  this.$refs.orgTree.append(treeNode);
-                } else {
-                  node.data.node.append(treeNode);
-                }
-              }
-            }
-          }
-
-          node.remove();
-
-          return [];
-        });
-      } else {
-        // Expand a normal node
-
-        // First build the search URL
-        let url = this.fhirServerUrl + "/Organization";
-
-        const params = {};
-
-        if (node.id === "root") {
-          if (this.options.root != null) {
-            params["_id"] = this.options.orgRoot;
-          }
-        } else {
-          params.partof = node.data.id;
-        }
-
-        return this.$http
-          .get(url, {
-            params: params,
-          })
-          .then((resp) => {
-            const nodes = [];
-
-            if (resp.data.entry != null) {
-              resp.data.entry.forEach((entry) => {
-                if (entry.resource) {
-                  const resource = entry.resource;
-
-                  const treeNode = {
-                    text: resource.name,
-                    data: { id: resource.resourceType + "/" + resource.id },
-                    isBatch: true,
-                  };
-
-                  nodes.push(treeNode);
-                }
-              });
-
-              if (resp.data.link != null) {
-                const next = resp.data.link.find(
-                  (element) => element.relation === "next"
-                );
-
-                if (next != null) {
-                  const treeNode = {
-                    text: "...",
-                    data: { url: next.url, node: node },
-                    isBatch: true,
-                  };
-
-                  nodes.push(treeNode);
-                }
-              }
-            }
-
-            return nodes;
-          });
       }
     },
   },
