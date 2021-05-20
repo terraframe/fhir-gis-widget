@@ -21,7 +21,7 @@
       >
         <font-awesome-icon icon="angle-double-left" />
       </v-list-item>
-      <v-subheader> Managing Organizations </v-subheader>
+      <v-subheader> Managing Organizations of {{ node.text }} </v-subheader>
       <v-list-item v-for="(item, i) in items" :key="i">
         <v-list-item-content>
           <v-list-item-title v-text="item.text"></v-list-item-title>
@@ -45,6 +45,7 @@ export default {
           return this.getNodes(node);
         },
       },
+      node: {},
       items: [],
       mode: "TREE",
     };
@@ -181,6 +182,7 @@ export default {
       }
     },
     handleClick(node) {
+      this.node = node;
       this.getOrganizations(node);
     },
     getOrganizations(node) {

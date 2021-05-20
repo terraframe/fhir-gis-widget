@@ -21,7 +21,7 @@
       >
         <font-awesome-icon icon="angle-double-left" />
       </v-list-item>
-      <v-subheader> Managed Locations </v-subheader>
+      <v-subheader> Locations managed by {{node.text}} </v-subheader>
       <v-list-item-group color="primary">
         <v-list-item v-for="(item, i) in items" :key="i">
           <v-list-item-content v-on:click="onNodeSelected(item)">
@@ -48,6 +48,7 @@ export default {
       },
       items: [],
       mode: "TREE",
+      node: {},
     };
   },
   mounted() {},
@@ -164,6 +165,8 @@ export default {
       }
     },
     handleClick(node) {
+      this.node = node;
+
       this.getLocations(node);
     },
     getLocations(node) {
