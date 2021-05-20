@@ -230,8 +230,6 @@ export default {
               }
             }
 
-            console.log("Test", nodes);
-
             this.items = nodes;
             this.mode = "LIST";
           });
