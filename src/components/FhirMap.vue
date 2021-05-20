@@ -1,124 +1,128 @@
 <template>
-  <v-container fluid>
-    <v-row>
-      <v-col class="d-flex" cols="12" sm="3">
-        <v-tabs
-          v-model="tab"
-          background-color="deep-purple accent-4"
-          class="elevation-2"
-          dark
-        >
-          <v-tabs-slider></v-tabs-slider>
+  <v-app id="app">
+    <v-container fluid>
+      <v-row>
+        <v-col class="d-flex" cols="12" sm="3">
+          <v-tabs
+            v-model="tab"
+            background-color="deep-purple accent-4"
+            class="elevation-2"
+            dark
+          >
+            <v-tabs-slider></v-tabs-slider>
 
-          <v-tab key="Search" href="#tab-search"> Search </v-tab>
-          <v-tab key="Tree" href="#tab-tree"> Hierarchies </v-tab>
-          <v-tab key="Orgs" href="#tab-org"> Organizations </v-tab>
+            <v-tab key="Search" href="#tab-search"> Search </v-tab>
+            <v-tab v-if="options.root != null" key="Tree" href="#tab-tree">
+              Hierarchies
+            </v-tab>
+            <v-tab key="Orgs" href="#tab-org"> Organizations </v-tab>
 
-          <v-tab-item key="Search" value="tab-search">
-            <v-form @submit.prevent="onSearch">
-              <v-select
-                filled
-                outlined
-                id="searchType"
-                class="select-input"
-                v-model="form.searchType"
-                :items="searchTypes"
-                item-text="label"
-                item-value="key"
-                required
-              ></v-select>
-              <v-select
-                v-if="form.selected.options.length > 0"
-                filled
-                outlined
-                v-model="form.option"
-                :items="form.selected.options"
-                item-text="label"
-                item-value="key"
-              ></v-select>
+            <v-tab-item key="Search" value="tab-search">
+              <v-form @submit.prevent="onSearch">
+                <v-select
+                  filled
+                  outlined
+                  id="searchType"
+                  class="select-input"
+                  v-model="form.searchType"
+                  :items="searchTypes"
+                  item-text="label"
+                  item-value="key"
+                  required
+                ></v-select>
+                <v-select
+                  v-if="form.selected.options.length > 0"
+                  filled
+                  outlined
+                  v-model="form.option"
+                  :items="form.selected.options"
+                  item-text="label"
+                  item-value="key"
+                ></v-select>
 
-              <v-text-field
-                filled
-                outlined
-                v-if="form.selected.system"
-                id="system"
-                style="margin-left: 5px"
-                v-model="form.system"
-                placeholder="(opt)"
-                label="System"
-              ></v-text-field>
+                <v-text-field
+                  filled
+                  outlined
+                  v-if="form.selected.system"
+                  id="system"
+                  style="margin-left: 5px"
+                  v-model="form.system"
+                  placeholder="(opt)"
+                  label="System"
+                ></v-text-field>
 
-              <v-text-field
-                filled
-                outlined
-                v-if="!form.selected.select"
-                id="text"
-                style="margin-left: 5px"
-                v-model="form.text"
-                :label="form.selected.label"
-                :placeholder="form.selected.placeholder"
-              ></v-text-field>
-              <v-select
-                filled
-                outlined
-                v-if="form.selected.select"
-                id="text"
-                style="margin-left: 5px"
-                v-model="form.text"
-                :items="form.selected.select"
-                item-text="sType"
-                item-value="sType"
-              ></v-select>
-              <v-text-field
-                filled
-                outlined
-                label="limit"
-                type="number"
-                id="count"
-                v-model="form.count"
-              ></v-text-field>
-              <v-btn
-                id="search-button"
-                type="submit"
-                variant="primary"
-                v-show="!isLoading"
-                :disabled="isLoading"
-              >
-                Search
-              </v-btn>
-              <v-progress-circular
-                v-if="isLoading"
-                indeterminate
-                color="primary"
-              ></v-progress-circular>
-            </v-form>
-          </v-tab-item>
-          <v-tab-item key="Tree" value="tab-tree">
-            <LocationPanel
-              :fhirServerUrl="fhirServerUrl"
-              :options="options"
-            ></LocationPanel>
-          </v-tab-item>
-          <v-tab-item key="Orgs" value="tab-org">
-            <OrganizationPanel
-              :fhirServerUrl="fhirServerUrl"
-              v-on:select="onNodeSelected"
-            ></OrganizationPanel>
-          </v-tab-item>
-        </v-tabs>
-      </v-col>
-      <v-col class="d-flex" cols="12" sm="9">
-        <div id="map-container">
-          <LayerPanel
-            v-on:baselayer="onChangeBaseLayer"
-            v-on:contextchange="refreshContextLayers"
-            :contextServices="options.contextServices"
-          ></LayerPanel>
-          <div id="map" class="map-view-port"></div>
-        </div>
-      </v-col>
-    </v-row>
-  </v-container>
+                <v-text-field
+                  filled
+                  outlined
+                  v-if="!form.selected.select"
+                  id="text"
+                  style="margin-left: 5px"
+                  v-model="form.text"
+                  :label="form.selected.label"
+                  :placeholder="form.selected.placeholder"
+                ></v-text-field>
+                <v-select
+                  filled
+                  outlined
+                  v-if="form.selected.select"
+                  id="text"
+                  style="margin-left: 5px"
+                  v-model="form.text"
+                  :items="form.selected.select"
+                  item-text="sType"
+                  item-value="sType"
+                ></v-select>
+                <v-text-field
+                  filled
+                  outlined
+                  label="limit"
+                  type="number"
+                  id="count"
+                  v-model="form.count"
+                ></v-text-field>
+                <v-btn
+                  id="search-button"
+                  type="submit"
+                  variant="primary"
+                  v-show="!isLoading"
+                  :disabled="isLoading"
+                >
+                  Search
+                </v-btn>
+                <v-progress-circular
+                  v-if="isLoading"
+                  indeterminate
+                  color="primary"
+                ></v-progress-circular>
+              </v-form>
+            </v-tab-item>
+            <v-tab-item v-if="options.root != null" key="Tree" value="tab-tree">
+              <LocationPanel
+                :fhirServerUrl="fhirServerUrl"
+                :options="options"
+              ></LocationPanel>
+            </v-tab-item>
+            <v-tab-item key="Orgs" value="tab-org">
+              <OrganizationPanel
+                :fhirServerUrl="fhirServerUrl"
+                v-on:select="onNodeSelected"
+              ></OrganizationPanel>
+            </v-tab-item>
+          </v-tabs>
+        </v-col>
+        <v-col class="d-flex" cols="12" sm="9">
+          <div id="map-container">
+            <LayerPanel
+              v-on:baselayer="onChangeBaseLayer"
+              v-on:contextchange="refreshContextLayers"
+              :contextServices="options.contextServices"
+            ></LayerPanel>
+            <div id="map" class="map-view-port"></div>
+          </div>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-app>
 </template>
 
 <script>
@@ -130,6 +134,7 @@ import OrganizationPanel from "./OrganizationPanel";
 import LocationPanel from "./LocationPanel";
 
 export default {
+  name: "fhir-gis-widget",
   components: {
     LayerPanel,
     OrganizationPanel,
@@ -791,6 +796,13 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 @import "~mapbox-gl/dist/mapbox-gl.css";
+
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #2c3e50;
+}
 
 #map-container {
   position: relative;

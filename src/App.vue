@@ -1,11 +1,9 @@
 <template>
-  <v-app id="app">
-    <FhirMap
-      :accessToken="accessToken"
-      :fhirServerUrl="fhirServerUrl"
-      :options="options"
-    />
-  </v-app>
+  <FhirMap
+    :accessToken="accessToken"
+    :fhirServerUrl="fhirServerUrl"
+    :options="options"
+  />
 </template>
 
 <script>
@@ -17,7 +15,7 @@ export default {
   data: () => ({
     accessToken: process.env.VUE_APP_MAPBOX_API_KEY,
     fhirServerUrl: process.env.VUE_APP_FHIR_BASE_URL,
-    options: options
+    options: options,
   }),
 
   components: {
