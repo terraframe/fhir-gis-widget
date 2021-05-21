@@ -100,6 +100,7 @@
               <LocationPanel
                 :fhirServerUrl="fhirServerUrl"
                 :options="options"
+                v-on:select="onNodeSelected"
               ></LocationPanel>
             </v-tab-item>
             <v-tab-item key="Orgs" value="tab-org">

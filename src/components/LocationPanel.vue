@@ -1,6 +1,6 @@
 <template>
   <div>
-    <tree v-show="mode === 'TREE'" :options="treeOptions" ref="nodeTree">
+    <tree v-show="mode === 'TREE'" :options="treeOptions" @node:selected="onNodeSelected" ref="nodeTree">
       <span class="tree-text" slot-scope="{ node }">
         <template>
           {{ node.text }}
@@ -52,6 +52,14 @@ export default {
   },
   mounted() {},
   methods: {
+    onNodeSelected(node) {
+      // Handle the pagination node
+      if (node.data != null && node.data.url != null) {
+        this.getOrganizations(node);
+      } else {
+        this.$emit("select", node);
+      }
+    },
     getNodes(node) {
       if (node.data != null && node.data.url != null) {
         // Handle the pagination node
