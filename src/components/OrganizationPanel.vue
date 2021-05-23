@@ -1,17 +1,17 @@
 <template>
   <div>
-    <tree v-show="mode === 'TREE'" :options="treeOptions" ref="orgTree">
+    <LiquorTree v-show="mode === 'TREE'" :options="treeOptions" ref="orgTree">
       <span class="tree-text" slot-scope="{ node }">
         <template>
           {{ node.text }}
-          <font-awesome-icon
+          <FontAwesomeIcon
             v-if="node.data == null || node.data.url == null"
             icon="map-pin"
             v-on:click.stop="handleClick(node)"
           />
         </template>
       </span>
-    </tree>
+    </LiquorTree>
     <v-list v-if="mode === 'LIST'" dense>
       <v-list-item
         v-on:click="
@@ -19,7 +19,7 @@
           items = [];
         "
       >
-        <font-awesome-icon icon="angle-double-left" />
+        <FontAwesomeIcon icon="angle-double-left" />
       </v-list-item>
       <v-subheader> Locations managed by {{ node.text }} </v-subheader>
       <v-list-item-group color="primary">
@@ -34,8 +34,14 @@
 </template>
 
 <script>
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import LiquorTree from 'liquor-tree'
+
 export default {
-  components: {},
+  components: {
+    FontAwesomeIcon,
+    LiquorTree
+  },
   props: {
     fhirServerUrl: { type: String, required: true },
   },

@@ -129,17 +129,22 @@
 <script>
 import mapboxgl from "mapbox-gl";
 import bbox from "@turf/bbox";
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faSearch, faBars, faMapPin, faAngleDoubleLeft } from '@fortawesome/free-solid-svg-icons'
 
 import LayerPanel from "./LayerPanel";
 import OrganizationPanel from "./OrganizationPanel";
 import LocationPanel from "./LocationPanel";
+
+library.add(faSearch, faBars, faMapPin, faAngleDoubleLeft)
+
 
 export default {
   name: "fhir-gis-widget",
   components: {
     LayerPanel,
     OrganizationPanel,
-    LocationPanel,
+    LocationPanel
   },
   props: {
     accessToken: { type: String, required: true },

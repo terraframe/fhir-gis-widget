@@ -5,7 +5,7 @@
     @mouseleave="baselayerIconHover = false"
   >
     <i v-if="!baselayerIconHover" class="layer-button">
-      <font-awesome-icon icon="bars" />
+      <FontAwesomeIcon icon="bars" />
     </i>
 
     <v-card id="base-layer-panel" v-show="baselayerIconHover">
@@ -45,7 +45,12 @@
 </template>
 
 <script>
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+
 export default {
+  components: {
+    FontAwesomeIcon,
+  },
   props: { contextServices: Array },
   data: () => ({
     baselayerIconHover: false,
