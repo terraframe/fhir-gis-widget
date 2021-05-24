@@ -468,15 +468,15 @@ export default {
       }
     },
     addLocationLayers() {
-      this.addGeojsonLayers("locations", "#80cdc1");
+      this.addGeojsonLayers("locations", "#80cdc1", this.collection);
     },
     addParentLayers() {
-      this.addGeojsonLayers("parents", "#d3d3d3");
+      this.addGeojsonLayers("parents", "#d3d3d3", this.parents);
     },
-    addGeojsonLayers(source, color) {
+    addGeojsonLayers(source, color, data) {
       this.map.addSource(source, {
         type: "geojson",
-        data: this.collection,
+        data: data,
       });
 
       // Polygon layer
