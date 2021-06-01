@@ -106,6 +106,7 @@
             <v-tab-item key="Orgs" value="tab-org">
               <OrganizationPanel
                 :fhirServerUrl="fhirServerUrl"
+                :options="options"
                 v-on:select="onNodeSelected"
               ></OrganizationPanel>
             </v-tab-item>
@@ -128,23 +129,29 @@
 
 <script>
 import mapboxgl from "mapbox-gl";
+import JSPath from "jspath";
+
 import bbox from "@turf/bbox";
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { faSearch, faBars, faMapPin, faAngleDoubleLeft } from '@fortawesome/free-solid-svg-icons'
+import { library } from "@fortawesome/fontawesome-svg-core";
+import {
+  faSearch,
+  faBars,
+  faMapPin,
+  faAngleDoubleLeft,
+} from "@fortawesome/free-solid-svg-icons";
 
 import LayerPanel from "./LayerPanel";
 import OrganizationPanel from "./OrganizationPanel";
 import LocationPanel from "./LocationPanel";
 
-library.add(faSearch, faBars, faMapPin, faAngleDoubleLeft)
-
+library.add(faSearch, faBars, faMapPin, faAngleDoubleLeft);
 
 export default {
   name: "fhir-gis-widget",
   components: {
     LayerPanel,
     OrganizationPanel,
-    LocationPanel
+    LocationPanel,
   },
   props: {
     accessToken: { type: String, required: true },
@@ -440,6 +447,59 @@ export default {
         new mapboxgl.AttributionControl({ compact: true }),
         "bottom-right"
       );
+
+      this.map.on("click", (e) => {
+        let features = this.map.queryRenderedFeatures(e.point);
+
+        if (features.length > 0) {
+          const feature = features[0];
+
+          let html = "<div>";
+          html += "<h3> " + feature.properties.name + "</h3>";
+          html += "<hr/>";
+          html += "<ul>";
+
+          if (
+            this.options.attributes != null &&
+            this.options.attributes.length > 0
+          ) {
+            this.options.attributes.forEach((attribute) => {
+              const value = feature.properties[attribute.name];
+
+              html += "<li> " + attribute.label + " : ";
+
+              if (value != null) {
+                let json = value;
+
+                try {
+                  json = JSON.parse(value);
+                } catch (e) {
+                  // Do nothing
+                }
+
+                if (Array.isArray(json)) {
+                  html += "<ul>";
+                  json.forEach((v) => {
+                    html += "<li>" + v + "</li>";
+                  });
+                  html += "</ul>";
+                } else {
+                  html += value;
+                }
+              }
+              html += "</li>";
+            });
+          }
+
+          html += "</ul>";
+          html += "</div>";
+
+          new mapboxgl.Popup({ closeOnClick: true, closeButton: false })
+            .setLngLat(e.lngLat)
+            .setHTML(html)
+            .addTo(this.map);
+        }
+      });
     },
     onChangeBaseLayer(layer) {
       if (layer.type === "mapbox") {
@@ -577,6 +637,25 @@ export default {
 
           const resource = entry.resource;
 
+          // Create the feature
+          const feature = {
+            type: "Feature",
+            properties: {
+              name: resource.name || "",
+            },
+          };
+
+          if (
+            this.options.attributes != null &&
+            this.options.attributes.length > 0
+          ) {
+            this.options.attributes.forEach((attribute) => {
+              const value = JSPath.apply(attribute.jspath, resource);
+
+              feature.properties[attribute.name] = value;
+            });
+          }
+
           // Use geojson if exists
           if (resource.extension != null) {
             resource.extension.forEach((extension) => {
@@ -590,15 +669,7 @@ export default {
                   if (data) {
                     const geometry = JSON.parse(window.atob(data));
 
-                    const feature = {
-                      type: "Feature",
-                      geometry: geometry,
-                      properties: {
-                        name: resource.name || "",
-                      },
-                    };
-
-                    features.push(feature);
+                    feature.geometry = geometry;
 
                     hasGeojsonExtension = true;
                   }
@@ -617,20 +688,16 @@ export default {
             resource.position.longitude != null &&
             resource.position.latitude != null
           ) {
-            const feature = {
-              type: "Feature",
-              geometry: {
-                type: "Point",
-                coordinates: [
-                  resource.position.longitude,
-                  resource.position.latitude,
-                ],
-              },
-              properties: {
-                name: resource.name || "",
-              },
+            feature.geometry = {
+              type: "Point",
+              coordinates: [
+                resource.position.longitude,
+                resource.position.latitude,
+              ],
             };
+          }
 
+          if (feature.geometry != null) {
             features.push(feature);
           }
         });

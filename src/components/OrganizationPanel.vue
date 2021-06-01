@@ -34,16 +34,17 @@
 </template>
 
 <script>
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import LiquorTree from 'liquor-tree'
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import LiquorTree from "liquor-tree";
 
 export default {
   components: {
     FontAwesomeIcon,
-    LiquorTree
+    LiquorTree,
   },
   props: {
     fhirServerUrl: { type: String, required: true },
+    options: { type: Object, required: true },
   },
   data() {
     return {
@@ -124,10 +125,9 @@ export default {
         const params = {};
 
         if (node.id === "root") {
-          // if (this.options.root != null) {
-          //   params["_id"] = this.options.orgRoot;
-          // }
-          // params.partof = null;
+          if (this.options.orgRoot != null) {
+            params["_id"] = this.options.orgRoot;
+          }
         } else {
           params.partof = node.data.id;
         }
