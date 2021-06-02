@@ -1,55 +1,135 @@
 {
-	"center":[
-	   104.81391,
-	   12.570423
+	"center": [
+		8.521441,
+		-11.84389
 	],
-	"zoom":3,
-	"root":1352,
-	"includeRoot":true,
-	"contextServices":[
-	   {
-		  "id":"cgr-geoserver",
-		  "type":"wms",
-		  "vendor":"geoserver",
-		  "label":"CGR geoserver",
-		  "url":"https://localhost:8443/geoserver/georegistry/wms",
-		  "layers":[
-			 {
-				"label":"Districts",
-				"name":"georegistry:ml_0district",
-				"level":2
-			 }
-		  ]
-	   },
-	   {
-		  "type":"vector",
-		  "label":"CGR vector",
-		  "locale":"en",
-		  "layers":[
-			 {
-				"name":"d1",
-				"label":"Cambodia 2021-03-31",
-				"url":"https://localhost:8443/georegistry/master-list/tile?x={x}&y={y}&z={z}&config=%7B%22oid%22%3A%22c150e6e2-2bea-4b70-ac76-33eb600005f1%22%7D",
-				"level":0
-			 }
-		  ]
-	   }
+	"zoom": 3,
+	"root": 1360,
+	"includeRoot": true,
+	"orgRoot": 2,
+	"contextServices": [
+		{
+			"id": "cgr-geoserver",
+			"type": "wms",
+			"vendor": "geoserver",
+			"label": "CGR geoserver",
+			"url": "https://localhost:8443/geoserver/georegistry/wms",
+			"layers": [
+				{
+					"label": "Districts",
+					"name": "georegistry:ml_0district",
+					"level": 2
+				}
+			]
+		},
+		{
+			"type": "vector",
+			"label": "CGR vector",
+			"locale": "en",
+			"layers": [
+				{
+					"name": "d1",
+					"label": "Cambodia 2021-03-31",
+					"url": "https://localhost:8443/georegistry/master-list/tile?x={x}&y={y}&z={z}&config=%7B%22oid%22%3A%22c150e6e2-2bea-4b70-ac76-33eb600005f1%22%7D",
+					"level": 0,
+					"styles": {
+						"fill": {
+							"fill-color": "#B22222",
+							"fill-opacity": 0.8,
+							"fill-outline-color": "black"
+						},
+						"line": {
+							"line-color": "#80cdc1",
+							"line-opacity": 0.8,
+							"line-width": 1
+						},
+						"circle": {
+							"circle-radius": 10,
+							"circle-color": "#80cdc1",
+							"circle-stroke-width": 2,
+							"circle-stroke-color": "#FFFFFF"
+						},
+						"label": {
+							"text-color": "black",
+							"text-halo-color": "#fff",
+							"text-halo-width": 2
+						}
+					}
+				}
+			]
+		}
 	],
-	"searchParameters":[
-	   {
-		  "key":"physicalType",
-		  "system":false,
-		  "label":"Physical Type",
-		  "placeholder":"Physical Type..",
-		  "options":[
-			 
-		  ]
-	   }
+	"searchParameters": [
+		{
+			"key": "physicalType",
+			"system": false,
+			"label": "Physical Type",
+			"placeholder": "Physical Type..",
+			"options": []
+		}
 	],
-	"filters":[
-	   {
-		  "name":"physicalType",
-		  "value":"si"
-	   }
-	]
- }
+	"filters": [],
+	"attributes": [
+		{
+			"name": "identifier",
+			"label": "Identifiers",
+			"jspath": ".identifier.value"
+		},
+		{
+			"name": "description",
+			"label": "Description",
+			"jspath": ".description[0]"
+		},
+		{
+			"name": "status",
+			"label": "Status",
+			"jspath": ".status[0]"
+		}
+	],
+	"locationStyles": {
+		"fill": {
+			"fill-color": "#B22222",
+			"fill-opacity": 0.8,
+			"fill-outline-color": "black"
+		},
+		"line": {
+			"line-color": "#80cdc1",
+			"line-opacity": 0.8,
+			"line-width": 1
+		},
+		"circle": {
+			"circle-radius": 10,
+			"circle-color": "#80cdc1",
+			"circle-stroke-width": 2,
+			"circle-stroke-color": "#FFFFFF"
+		},
+		"label": {
+			"text-color": "black",
+			"text-halo-color": "#fff",
+			"text-halo-width": 2
+		}
+	},
+	"selectedStyles": {
+		"fill": {
+			"fill-color": "#d3d3d3",
+			"fill-opacity": 0.8,
+			"fill-outline-color": "black"
+		},
+		"line": {
+			"line-color": "#d3d3d3",
+			"line-opacity": 0.8,
+			"line-width": 1
+		},
+		"circle": {
+			"circle-radius": 10,
+			"circle-color": "#d3d3d3",
+			"circle-stroke-width": 2,
+			"circle-stroke-color": "#FFFFFF"
+		},
+		"label": {
+			"text-color": "black",
+			"text-halo-color": "#fff",
+			"text-halo-width": 2
+		}
+	}
+}

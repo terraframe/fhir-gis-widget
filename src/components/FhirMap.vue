@@ -528,16 +528,64 @@ export default {
       }
     },
     addLocationLayers() {
-      this.addGeojsonLayers("locations", "#80cdc1", this.collection);
+      this.addGeojsonLayers(
+        "locations",
+        "locationStyles",
+        "#80cdc1",
+        this.collection
+      );
     },
     addParentLayers() {
-      this.addGeojsonLayers("parents", "#d3d3d3", this.parents);
+      this.addGeojsonLayers(
+        "parents",
+        "selectedStyles",
+        "#d3d3d3",
+        this.parents
+      );
     },
-    addGeojsonLayers(source, color, data) {
+    addGeojsonLayers(source, styleName, color, data) {
       this.map.addSource(source, {
         type: "geojson",
         data: data,
       });
+
+      const fill =
+        this.options[styleName] != null && this.options[styleName].fill != null
+          ? this.options[styleName].fill
+          : {
+              "fill-color": color,
+              "fill-opacity": 0.8,
+              "fill-outline-color": "black",
+            };
+
+      const line =
+        this.options[styleName] != null && this.options[styleName].line != null
+          ? this.options[styleName].line
+          : {
+              "line-color": color,
+              "line-opacity": 0.8,
+              "line-width": 1,
+            };
+
+      const circle =
+        this.options[styleName] != null &&
+        this.options[styleName].circle != null
+          ? this.options[styleName].circle
+          : {
+              "circle-radius": 10,
+              "circle-color": color,
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#FFFFFF",
+            };
+
+      const label =
+        this.options[styleName] != null && this.options[styleName].label != null
+          ? this.options[styleName].label
+          : {
+              "text-color": "black",
+              "text-halo-color": "#fff",
+              "text-halo-width": 2,
+            };
 
       // Polygon layer
       this.map.addLayer({
@@ -545,11 +593,7 @@ export default {
         type: "fill",
         source: source,
         layout: {},
-        paint: {
-          "fill-color": color,
-          "fill-opacity": 0.8,
-          "fill-outline-color": "black",
-        },
+        paint: fill,
         filter: [
           "all",
           [
@@ -568,11 +612,7 @@ export default {
         type: "line",
         source: source,
         layout: {},
-        paint: {
-          "line-color": color,
-          "line-opacity": 0.8,
-          "line-width": 1,
-        },
+        paint: line,
         filter: [
           "all",
           [
@@ -590,12 +630,7 @@ export default {
         id: source + "-points",
         type: "circle",
         source: source,
-        paint: {
-          "circle-radius": 10,
-          "circle-color": color,
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#FFFFFF",
-        },
+        paint: circle,
         filter: [
           "all",
           ["match", ["geometry-type"], ["Point", "MultiPont"], true, false],
@@ -607,11 +642,7 @@ export default {
         id: source + "-label",
         source: source,
         type: "symbol",
-        paint: {
-          "text-color": "black",
-          "text-halo-color": "#fff",
-          "text-halo-width": 2,
-        },
+        paint: label,
         layout: {
           "text-field": ["get", "name"],
           "text-offset": [0, 0.6],
@@ -749,6 +780,44 @@ export default {
         tiles: [layer.url],
       });
 
+      const fill =
+        layer.styles != null && layer.styles.fill != null
+          ? layer.styles.fill
+          : {
+              "fill-color": SELECTED_COLOR,
+              "fill-opacity": 0.8,
+              "fill-outline-color": "black",
+            };
+
+      const line =
+        layer.styles != null && layer.styles.line != null
+          ? layer.styles.line
+          : {
+              "line-color": SELECTED_COLOR,
+              "line-opacity": 0.8,
+              "line-width": 1,
+            };
+
+      const circle =
+        layer.styles != null &&
+        layer.styles.circle != null
+          ? layer.styles.circle
+          : {
+              "circle-radius": 10,
+              "circle-color": SELECTED_COLOR,
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#FFFFFF",
+            };
+
+      const label =
+        layer.styles != null && layer.styles.label != null
+          ? layer.styles.label
+          : {
+              "text-color": "black",
+              "text-halo-color": "#fff",
+              "text-halo-width": 2,
+            };      
+
       // Point layer
       this.map.addLayer(
         {
@@ -756,12 +825,7 @@ export default {
           type: "circle",
           source: source,
           "source-layer": "context",
-          paint: {
-            "circle-radius": 10,
-            "circle-color": SELECTED_COLOR,
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#FFFFFF",
-          },
+          paint: circle,
           filter: [
             "all",
             ["match", ["geometry-type"], ["Point", "MultiPont"], true, false],
@@ -776,11 +840,7 @@ export default {
         type: "line",
         source: source,
         "source-layer": "context",
-        paint: {
-          "line-color": SELECTED_COLOR,
-          "line-opacity": 0.8,
-          "line-width": 1,
-        },
+        paint: line,
         filter: [
           "all",
           [
@@ -801,11 +861,7 @@ export default {
           source: source,
           "source-layer": "context",
           layout: {},
-          paint: {
-            "fill-color": SELECTED_COLOR,
-            "fill-opacity": 0.8,
-            "fill-outline-color": "black",
-          },
+          paint: fill,
           filter: [
             "all",
             [
@@ -827,11 +883,7 @@ export default {
           source: source,
           "source-layer": "context",
           type: "symbol",
-          paint: {
-            "text-color": "black",
-            "text-halo-color": "#fff",
-            "text-halo-width": 2,
-          },
+          paint: label,
           layout: {
             "text-field": [
               "case",
