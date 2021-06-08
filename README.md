@@ -90,7 +90,40 @@ new Vue({
 			"options": []
 		}
 	],
-	"filters": []
+	"filters": [],
+	"attributes": [
+		{
+			"name": "identifier",
+			"label": "Identifiers",
+			"jspath": ".identifier.value"
+		},
+		{
+			"name": "description",
+			"label": "Description",
+			"jspath": ".description[0]"
+		},
+		{
+			"name": "status",
+			"label": "Status",
+			"jspath": ".status[0]"
+		}
+	],
+	"locationStyles": {
+		"fill": {
+			"fill-color": "#B22222",
+			"fill-opacity": 0.8,
+			"fill-outline-color": "black"
+		}
+	},
+	"selectedStyles": {
+		"circle": {
+			"circle-radius": 10,
+			"circle-color": "#d3d3d3",
+			"circle-stroke-width": 2,
+			"circle-stroke-color": "#FFFFFF"
+		},
+	}
+
 }
 ```
 
@@ -102,6 +135,9 @@ new Vue({
 - contextServices: List of services which provide extra context layers for the map.  Currently supports geoserver WMS context layers as well as CGR vector tile layers.  See further below for more details about configuring context layer services.
 - searchParameters: List of custom search parameters not provided by the widget which can be used to restrict the map results. See further below for more details about configuring search parameters.
 - filters: List of global filters to use when restricting all Location results.  Expecting an object with 'name' and 'value' properties.  Such as the following: {'name':'idenitifier', 'value' : 'XXX-YYY-ZZZ'}
+- attributes: List of attributes/value pairs which should appear in the pop-up modal.   Uses jspath (https://www.npmjs.com/package/jspath) to get the values out of the Location resource JSON object
+- locationStyles : Mapbox-gl paint definition (https://docs.mapbox.com/mapbox-gl-js/style-spec/layers/) to use for the Location layer on the map.
+- selectedStyles : Mapbox-gl paint definition (https://docs.mapbox.com/mapbox-gl-js/style-spec/layers/) to use for the selected location layer on the map.
 
 ## Context Service Definitions
 
