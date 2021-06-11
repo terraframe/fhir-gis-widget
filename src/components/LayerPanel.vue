@@ -8,8 +8,8 @@
       <FontAwesomeIcon icon="bars" />
     </i>
 
-    <v-card id="base-layer-panel" v-show="baselayerIconHover">
-      <div style="margin-bottom: 10px;">
+    <v-card id="base-layer-panel" v-show="baselayerIconHover" style="box-shadow:none;">
+      <div style="margin-bottom:10px;">
         
         <v-radio-group column v-model="selectedLayer">
           <h4>Base layer</h4>
@@ -100,19 +100,55 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-  .layer-button {
-    padding: 2px 6px;
-    vertical-align: middle;
-    font-size: 16px;
-    color: black;
-    float: right;
-    width: 26px;
-    height: 26px;
-    border-radius: 5px;
-  }
 
   #base-layer-panel {
     padding: 0 10px;
     top: -16px;
   }
+
+
+
+  .layer-toggle {
+    position: absolute;
+    right: 1px;
+    top: 62px;
+    z-index: 10;
+    margin: 10px 9px 0 0;
+    border-radius: 4px;
+    border: 0;
+      border-top-color: initial;
+      border-top-style: initial;
+      border-top-width: 0px;
+      border-right-color: initial;
+      border-right-style: initial;
+      border-right-width: 0px;
+      border-bottom-color: initial;
+      border-bottom-style: initial;
+      border-bottom-width: 0px;
+      border-left-color: initial;
+      border-left-style: initial;
+      border-left-width: 0px;
+      border-image-source: initial;
+      border-image-slice: initial;
+      border-image-width: initial;
+      border-image-outset: initial;
+      border-image-repeat: initial;
+      box-sizing: border-box;
+      background-color: white;
+      box-shadow: 0 0 0 2px rgb(0 0 0 / 10%);
+  }
+  .layer-toggle i.layer-button {
+    width: 29px;
+    height: 29px;
+    padding: 2px 6px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 16px;
+    color: black;
+    float: right;
+  }
+  .layer-toggle i.layer-button svg {
+    vertical-align: middle;
+  }
+
 </style>
