@@ -36,6 +36,7 @@
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import LiquorTree from "liquor-tree";
+import fhirpath from "fhirpath";
 
 export default {
   components: {
@@ -76,13 +77,42 @@ export default {
           if (entry.resource) {
             const resource = entry.resource;
 
-            const treeNode = {
-              text: resource.name,
-              data: { id: resource.resourceType + "/" + resource.id },
-              isBatch: true,
-            };
+            if (parent.id !== "root") {
+              const exp =
+                "Organization.extension.where(url = 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension')";
 
-            nodes.push(treeNode);
+              const orgs = fhirpath.evaluate(resource, exp);
+
+              orgs.forEach((org) => {
+                const hierarchyType = org.extension.filter(
+                  (ext) => ext.url === "hierarchy-type"
+                )[0];
+                const hierarchyLabel = hierarchyType.valueCodeableConcept.text;
+
+                const partOf = org.extension.filter(
+                  (ext) => ext.url === "part-of"
+                )[0];
+                const reference = partOf.valueReference.reference;
+
+                if (reference === parent.data.id) {
+                  const treeNode = {
+                    text: resource.name + " (" + hierarchyLabel + ")",
+                    data: { id: resource.resourceType + "/" + resource.id },
+                    isBatch: true,
+                  };
+
+                  nodes.push(treeNode);
+                }
+              });
+            } else {
+              const treeNode = {
+                text: resource.name,
+                data: { id: resource.resourceType + "/" + resource.id },
+                isBatch: true,
+              };
+
+              nodes.push(treeNode);
+            }
           }
         });
       }
