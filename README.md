@@ -2,6 +2,10 @@
 
 A GIS widget for viewing Location resources from a FHIR server.  Locations must include geojson data as an extension to be viewable on the map.  The Location.position value will be used as a fallback if not geojson data is provided.
 
+# Prerequisites
+- A Vue app that the widget will be installed into.
+- A FHIR server with data loaded that the widget will use.
+
 # Installation
 
     npm install @terraframe/fhir-gis-widget

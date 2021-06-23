@@ -2,10 +2,10 @@
   <v-app id="fhir-gis-app">
     <v-container fluid>
       <v-row>
-        <v-col class="d-flex" cols="12" sm="3">
+        <v-col class="d-flex" style="height:100vh;" cols="12" sm="3">
           <v-tabs
             v-model="tab"
-            background-color="deep-purple accent-4"
+            background-color="#005695"
             class="elevation-2"
             dark
           >
@@ -51,7 +51,6 @@
                   outlined
                   v-if="form.selected.system"
                   id="system"
-                  style="margin-left: 5px"
                   v-model="form.system"
                   placeholder="(opt)"
                   label="System"
@@ -62,7 +61,6 @@
                   outlined
                   v-if="!form.selected.select"
                   id="text"
-                  style="margin-left: 5px"
                   v-model="form.text"
                   :label="form.selected.label"
                   :placeholder="form.selected.placeholder"
@@ -72,7 +70,6 @@
                   outlined
                   v-if="form.selected.select"
                   id="text"
-                  style="margin-left: 5px"
                   v-model="form.text"
                   :items="form.selected.select"
                   item-text="sType"
@@ -88,6 +85,7 @@
                 ></v-text-field>
                 <v-btn
                   id="search-button"
+                  style="margin-bottom:10px;"
                   type="submit"
                   variant="primary"
                   v-show="!isLoading"
@@ -288,6 +286,9 @@ export default {
       zoom: this.options.zoom,
     });
 
+    this.map.dragRotate.disable();
+    this.map.touchZoomRotate.disableRotation();
+
     this.map.on("load", () => {
       this.initMap();
     });
@@ -474,7 +475,7 @@ export default {
 
       // Add zoom and rotation controls to the map.
       this.map.addControl(
-        new mapboxgl.NavigationControl({ visualizePitch: true }),
+        new mapboxgl.NavigationControl({ visualizePitch: false, showCompass: false }),
         "top-right"
       );
       this.map.addControl(
@@ -1203,19 +1204,10 @@ export default {
   margin-left: 5px;
 }
 
-.layer-button {
-  width: 29px;
-  height: 29px;
-}
 
-.layer-toggle {
-  position: absolute;
-  right: 0px;
-  top: 90px;
-  z-index: 10;
-  margin: 10px 9px 0 0;
-  border: solid 2.5px rgba(211, 211, 211, 0.7);
-  border-radius: 5px;
-  background: #fff;
+>>> .v-window.v-item-group.v-tabs-items{
+  overflow:auto;
+  height:calc(100% - 48px);
+  padding: 10px;
 }
 </style>
