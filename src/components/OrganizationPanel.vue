@@ -68,49 +68,58 @@ export default {
         this.$emit("select", node);
       }
     },
+    createNodes(entries, links, parent) {
+      const nodes = [];
+
+      if (entries != null) {
+        entries.forEach((entry) => {
+          if (entry.resource) {
+            const resource = entry.resource;
+
+            const treeNode = {
+              text: resource.name,
+              data: { id: resource.resourceType + "/" + resource.id },
+              isBatch: true,
+            };
+
+            nodes.push(treeNode);
+          }
+        });
+      }
+
+      if (links != null) {
+        const next = links.find((element) => element.relation === "next");
+
+        if (next != null) {
+          const treeNode = {
+            text: "...",
+            data: { url: next.url, node: parent },
+            isBatch: true,
+          };
+
+          nodes.push(treeNode);
+        }
+      }
+
+      return nodes;
+    },
     getNodes(node) {
       if (node.data != null && node.data.url != null) {
         // Handle the pagination node
         return this.$http.get(node.data.url, {}).then((resp) => {
-          if (resp.data.entry != null) {
-            resp.data.entry.forEach((entry) => {
-              if (entry.resource) {
-                const resource = entry.resource;
+          const nodes = this.createNodes(
+            resp.data.entry,
+            resp.data.link,
+            node.data.node
+          );
 
-                const treeNode = {
-                  text: resource.name,
-                  data: { id: resource.resourceType + "/" + resource.id },
-                  isBatch: true,
-                };
-
-                if (node.data.node.id === "root") {
-                  this.$refs.orgTree.append(treeNode);
-                } else {
-                  node.data.node.append(treeNode);
-                }
-              }
-            });
-
-            if (resp.data.link != null) {
-              const next = resp.data.link.find(
-                (element) => element.relation === "next"
-              );
-
-              if (next != null) {
-                const treeNode = {
-                  text: "...",
-                  data: { url: next.url, node: node.data.node },
-                  isBatch: true,
-                };
-
-                if (node.data.node.id === "root") {
-                  this.$refs.orgTree.append(treeNode);
-                } else {
-                  node.data.node.append(treeNode);
-                }
-              }
+          nodes.forEach((treeNode) => {
+            if (node.data.node.id === "root") {
+              this.$refs.orgTree.append(treeNode);
+            } else {
+              node.data.node.append(treeNode);
             }
-          }
+          });
 
           node.remove();
 
@@ -137,41 +146,7 @@ export default {
             params: params,
           })
           .then((resp) => {
-            const nodes = [];
-
-            if (resp.data.entry != null) {
-              resp.data.entry.forEach((entry) => {
-                if (entry.resource) {
-                  const resource = entry.resource;
-
-                  const treeNode = {
-                    text: resource.name,
-                    data: { id: resource.resourceType + "/" + resource.id },
-                    isBatch: true,
-                  };
-
-                  nodes.push(treeNode);
-                }
-              });
-
-              if (resp.data.link != null) {
-                const next = resp.data.link.find(
-                  (element) => element.relation === "next"
-                );
-
-                if (next != null) {
-                  const treeNode = {
-                    text: "...",
-                    data: { url: next.url, node: node },
-                    isBatch: true,
-                  };
-
-                  nodes.push(treeNode);
-                }
-              }
-            }
-
-            return nodes;
+            return this.createNodes(resp.data.entry, resp.data.link, node);
           });
       }
     },

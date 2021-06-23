@@ -1,5 +1,5 @@
 <template>
-  <v-app id="app">
+  <v-app id="fhir-gis-app">
     <v-container fluid>
       <v-row>
         <v-col class="d-flex" cols="12" sm="3">
@@ -12,10 +12,16 @@
             <v-tabs-slider></v-tabs-slider>
 
             <v-tab key="Search" href="#tab-search"> Search </v-tab>
-            <v-tab v-if="options.root != null" key="Tree" href="#tab-tree">
-              Hierarchies
-            </v-tab>
-            <v-tab key="Orgs" href="#tab-org"> Organizations </v-tab>
+
+            <template v-if="options.isFacility !== true">
+              <v-tab v-if="options.root != null" key="Tree" href="#tab-tree">
+                Hierarchies
+              </v-tab>
+              <v-tab key="Orgs" href="#tab-org"> Organizations </v-tab>
+            </template>
+            <template v-else>
+              <v-tab key="Facilities" href="#tab-facility"> Locations </v-tab>
+            </template>
 
             <v-tab-item key="Search" value="tab-search">
               <v-form @submit.prevent="onSearch">
@@ -96,20 +102,35 @@
                 ></v-progress-circular>
               </v-form>
             </v-tab-item>
-            <v-tab-item v-if="options.root != null" key="Tree" value="tab-tree">
-              <LocationPanel
-                :fhirServerUrl="fhirServerUrl"
-                :options="options"
-                v-on:select="onNodeSelected"
-              ></LocationPanel>
-            </v-tab-item>
-            <v-tab-item key="Orgs" value="tab-org">
-              <OrganizationPanel
-                :fhirServerUrl="fhirServerUrl"
-                :options="options"
-                v-on:select="onNodeSelected"
-              ></OrganizationPanel>
-            </v-tab-item>
+            <template v-if="options.isFacility !== true">
+              <v-tab-item
+                v-if="options.root != null"
+                key="Tree"
+                value="tab-tree"
+              >
+                <LocationPanel
+                  :fhirServerUrl="fhirServerUrl"
+                  :options="options"
+                  v-on:select="onNodeSelected"
+                ></LocationPanel>
+              </v-tab-item>
+              <v-tab-item key="Orgs" value="tab-org">
+                <OrganizationPanel
+                  :fhirServerUrl="fhirServerUrl"
+                  :options="options"
+                  v-on:select="onNodeSelected"
+                ></OrganizationPanel>
+              </v-tab-item>
+            </template>
+            <template v-else>
+              <v-tab-item key="Facilities" value="tab-facility">
+                <FacilityPanel
+                  :fhirServerUrl="fhirServerUrl"
+                  :options="options"
+                  v-on:select="onNodeSelected"
+                ></FacilityPanel>
+              </v-tab-item>
+            </template>
           </v-tabs>
         </v-col>
         <v-col class="d-flex" cols="12" sm="9">
@@ -129,8 +150,9 @@
 
 <script>
 import mapboxgl from "mapbox-gl";
-import JSPath from "jspath";
-
+import axios from "axios";
+import VueAxios from "vue-axios";
+import Vue from "vue";
 import bbox from "@turf/bbox";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
@@ -139,12 +161,16 @@ import {
   faMapPin,
   faAngleDoubleLeft,
 } from "@fortawesome/free-solid-svg-icons";
+import fhirpath from "fhirpath";
 
 import LayerPanel from "./LayerPanel";
 import OrganizationPanel from "./OrganizationPanel";
 import LocationPanel from "./LocationPanel";
+import FacilityPanel from "./FacilityPanel";
 
 library.add(faSearch, faBars, faMapPin, faAngleDoubleLeft);
+
+Vue.use(VueAxios, axios);
 
 export default {
   name: "fhir-gis-widget",
@@ -152,6 +178,7 @@ export default {
     LayerPanel,
     OrganizationPanel,
     LocationPanel,
+    FacilityPanel,
   },
   props: {
     accessToken: { type: String, required: true },
@@ -329,7 +356,14 @@ export default {
         }
       });
     },
-    async onSearch() {
+    onSearch() {
+      if (this.options.isFacility) {
+        this.onFacilitySearch();
+      } else {
+        this.onLocationSearch();
+      }
+    },
+    async onLocationSearch() {
       try {
         this.isLoading = true;
 
@@ -681,34 +715,32 @@ export default {
             this.options.attributes.length > 0
           ) {
             this.options.attributes.forEach((attribute) => {
-              const value = JSPath.apply(attribute.jspath, resource);
+              const value = fhirpath.evaluate(resource, attribute.expression);
 
               feature.properties[attribute.name] = value;
             });
           }
 
           // Use geojson if exists
-          if (resource.extension != null) {
-            resource.extension.forEach((extension) => {
-              if (
-                extension.url ===
-                "http://hl7.org/fhir/StructureDefinition/location-boundary-geojson"
-              ) {
-                try {
-                  const data = extension.valueAttachment.data;
+          const result = fhirpath.evaluate(
+            resource,
+            "Location.extension.where(url = 'http://hl7.org/fhir/StructureDefinition/location-boundary-geojson').valueAttachment.data"
+          );
 
-                  if (data) {
-                    const geometry = JSON.parse(window.atob(data));
+          if (result.length > 0) {
+            try {
+              const data = result[0];
 
-                    feature.geometry = geometry;
+              if (data) {
+                const geometry = JSON.parse(window.atob(data));
 
-                    hasGeojsonExtension = true;
-                  }
-                } catch (e) {
-                  hasGeojsonExtension = false;
-                }
+                feature.geometry = geometry;
+
+                hasGeojsonExtension = true;
               }
-            });
+            } catch (e) {
+              hasGeojsonExtension = false;
+            }
           }
 
           // Else fall back on the position data if it exists, otherwise do
@@ -799,8 +831,7 @@ export default {
             };
 
       const circle =
-        layer.styles != null &&
-        layer.styles.circle != null
+        layer.styles != null && layer.styles.circle != null
           ? layer.styles.circle
           : {
               "circle-radius": 10,
@@ -816,7 +847,7 @@ export default {
               "text-color": "black",
               "text-halo-color": "#fff",
               "text-halo-width": 2,
-            };      
+            };
 
       // Point layer
       this.map.addLayer(
@@ -914,6 +945,222 @@ export default {
         this.map.removeSource(source);
       }
     },
+    async onFacilitySearch() {
+      try {
+        this.isLoading = true;
+
+        this.parents = {
+          type: "FeatureCollection",
+          features: [],
+        };
+
+        // Build the search URL
+        let url = this.fhirServerUrl + "/Organization";
+
+        var params = new URLSearchParams();
+
+        // Include the Location
+        params.append("_revinclude", "Location:organization");
+
+        if (this.tab !== "tab-search") {
+          if (this.selected != null) {
+            params.append("partof", this.selected);
+          }
+
+          // Recurive include for location
+          params.append("_revinclude", "Organization:partof");
+        } else {
+          params.append("_count", this.form.count);
+
+          // Include the search parameters if there are any
+          if (this.form.text) {
+            let value = this.form.text;
+
+            if (this.form.selected.system && this.form.system) {
+              value = this.form.system + "|" + this.form.text;
+            }
+
+            let attr = this.form.selected.key;
+
+            if (this.form.option !== "=") {
+              attr += this.form.option;
+            }
+
+            params.append(attr, value);
+          }
+        }
+
+        if (this.options.filters) {
+          this.options.filters.forEach((filter) => {
+            params.append(filter.name, filter.value);
+          });
+        }
+
+        const response = await this.$http.get(url, {
+          params: params,
+        });
+
+        // Create the feature collection from the FHIR response
+        this.collection = this.createFacilityCollection(response.data);
+
+        // Update the map results
+        this.map.getSource("locations").setData(this.collection);
+
+        // Update the parents layer
+        if (this.tab !== "tab-search") {
+          if (this.selected != null) {
+            this.parents = {
+              type: "FeatureCollection",
+              features: [],
+            };
+
+            // Get the parent
+            const response = await this.$http.get(url, {
+              params: {
+                _id: this.selected,
+                _revinclude: "Location:organization",
+              },
+            });
+
+            // Create the feature collection from the FHIR response
+            this.parents = this.createFacilityCollection(response.data);
+          }
+        }
+
+        this.map.getSource("parents").setData(this.parents);
+
+        // Get bounds of all features
+        let union = {
+          type: "FeatureCollection",
+          features: [],
+        };
+
+        union.features = union.features.concat(this.collection.features);
+        union.features = union.features.concat(this.parents.features);
+
+        // Zoom to the results on the map
+        if (union.features.length > 0) {
+          let bounds = bbox(union);
+
+          this.map.fitBounds(bounds, { padding: 20 });
+        }
+      } catch (err) {
+        // uh oh, didn't work, time for plan B
+        console.log(err);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    createFacilityCollection(payload) {
+      let features = [];
+
+      if (payload.entry) {
+        // First load all Organizations into a map which will be used when populating the Features from the Location resource
+        const organizations = {};
+
+        payload.entry.forEach((entry) => {
+          const resource = entry.resource;
+
+          if (resource.resourceType === "Organization") {
+            const key = resource.resourceType + "/" + resource.id;
+
+            organizations[key] = resource;
+          }
+        });
+
+        // Second process the Location resources
+        payload.entry.forEach((entry) => {
+          let hasGeojsonExtension = false;
+
+          const resource = entry.resource;
+
+          if (
+            resource.resourceType === "Location" &&
+            resource.managingOrganization != null
+          ) {
+            const organization =
+              organizations[resource.managingOrganization.reference];
+
+            // const orgs = fhirpath.evaluate(
+            //   organization,
+            //   "Organization.extension.where(url = 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension').extension.where(url = 'part-of').valueReference"
+            // );
+
+            // console.log("Orgs", orgs);
+
+            // Create the feature
+            const feature = {
+              type: "Feature",
+              properties: {
+                name: organization.name || "",
+              },
+            };
+
+            if (
+              this.options.attributes != null &&
+              this.options.attributes.length > 0
+            ) {
+              this.options.attributes.forEach((attribute) => {
+                const value = fhirpath.evaluate(resource, attribute.expression);
+
+                if (organization != null) {
+                  value.concat(
+                    fhirpath.evaluate(organization, attribute.expression)
+                  );
+                }
+
+                feature.properties[attribute.name] = value;
+              });
+            }
+
+            // Get the geojson if it exists
+            const result = fhirpath.evaluate(
+              resource,
+              "Location.extension.where(url = 'http://hl7.org/fhir/StructureDefinition/location-boundary-geojson').valueAttachment.data"
+            );
+
+            if (result.length > 0) {
+              try {
+                const data = result[0];
+
+                if (data) {
+                  const geometry = JSON.parse(window.atob(data));
+
+                  feature.geometry = geometry;
+
+                  hasGeojsonExtension = true;
+                }
+              } catch (e) {
+                hasGeojsonExtension = false;
+              }
+            }
+
+            // Else fall back on the position data if it exists, otherwise do
+            // not map the location
+            if (
+              !hasGeojsonExtension &&
+              resource.position != null &&
+              resource.position.longitude != null &&
+              resource.position.latitude != null
+            ) {
+              feature.geometry = {
+                type: "Point",
+                coordinates: [
+                  resource.position.longitude,
+                  resource.position.latitude,
+                ],
+              };
+            }
+
+            if (feature.geometry != null) {
+              features.push(feature);
+            }
+          }
+        });
+      }
+
+      return { type: "FeatureCollection", features: features };
+    },
   },
 };
 </script>
@@ -922,7 +1169,7 @@ export default {
 <style scoped>
 @import "~mapbox-gl/dist/mapbox-gl.css";
 
-#app {
+#fhir-gis-app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

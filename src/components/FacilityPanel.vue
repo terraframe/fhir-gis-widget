@@ -1,18 +1,13 @@
 <template>
   <div>
-    <LiquorTree
-      v-show="mode === 'TREE'"
-      :options="treeOptions"
-      @node:selected="onNodeSelected"
-      ref="nodeTree"
-    >
+    <LiquorTree v-show="mode === 'TREE'" :options="treeOptions" ref="orgTree">
       <span class="tree-text" slot-scope="{ node }">
         <template>
           {{ node.text }}
           <FontAwesomeIcon
             v-if="node.data == null || node.data.url == null"
             icon="map-pin"
-            v-on:click.stop="handleClick(node)"
+            v-on:click.stop="onNodeSelected(node)"
           />
         </template>
       </span>
@@ -26,12 +21,14 @@
       >
         <FontAwesomeIcon icon="angle-double-left" />
       </v-list-item>
-      <v-subheader> Managing Organizations of {{ node.text }} </v-subheader>
-      <v-list-item v-for="(item, i) in items" :key="i">
-        <v-list-item-content>
-          <v-list-item-title v-text="item.text"></v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
+      <v-subheader> Locations managed by {{ node.text }} </v-subheader>
+      <v-list-item-group color="primary">
+        <v-list-item v-for="(item, i) in items" :key="i">
+          <v-list-item-content v-on:click="onNodeSelected(item)">
+            <v-list-item-title v-text="item.text"></v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list-item-group>
     </v-list>
   </div>
 </template>
@@ -56,9 +53,9 @@ export default {
           return this.getNodes(node);
         },
       },
-      node: {},
       items: [],
       mode: "TREE",
+      node: {},
     };
   },
   mounted() {},
@@ -66,7 +63,7 @@ export default {
     onNodeSelected(node) {
       // Handle the pagination node
       if (node.data != null && node.data.url != null) {
-        this.getOrganizations(node);
+        this.getLocations(node);
       } else {
         this.$emit("select", node);
       }
@@ -84,14 +81,6 @@ export default {
               data: { id: resource.resourceType + "/" + resource.id },
               isBatch: true,
             };
-
-            if (
-              resource.managingOrganization != null &&
-              resource.managingOrganization.reference != null
-            ) {
-              treeNode.data.organization =
-                resource.managingOrganization.reference;
-            }
 
             nodes.push(treeNode);
           }
@@ -140,20 +129,17 @@ export default {
         // Expand a normal node
 
         // First build the search URL
-        let url = this.fhirServerUrl + "/Location";
+        let url = this.fhirServerUrl + "/Organization";
 
-        const params = {};
+        var params = new URLSearchParams();
+        // params.append("_revinclude", "Location:organization");
 
         if (node.id === "root") {
-          if (this.options.root != null) {
-            if (this.options.includeRoot) {
-              params["_id"] = this.options.root;
-            } else {
-              params.partof = "Location/" + this.options.root;
-            }
+          if (this.options.orgRoot != null) {
+            params.append("_id", this.options.orgRoot);
           }
         } else {
-          params.partof = node.data.id;
+          params.append("partof", node.data.id);
         }
 
         return this.$http
@@ -162,62 +148,6 @@ export default {
           })
           .then((resp) => {
             return this.createNodes(resp.data.entry, resp.data.link, node);
-          });
-      }
-    },
-    handleClick(node) {
-      this.node = node;
-      this.getOrganizations(node);
-    },
-    getOrganizations(node) {
-      if (node.data.organization != null) {
-        let url = this.fhirServerUrl + "/Organization";
-
-        const params = {
-          _id: node.data.organization,
-        };
-
-        this.$http
-          .get(url, {
-            params: params,
-          })
-          .then((resp) => {
-            const nodes = [];
-
-            if (resp.data.entry != null) {
-              resp.data.entry.forEach((entry) => {
-                if (entry.resource) {
-                  const resource = entry.resource;
-
-                  const treeNode = {
-                    text: resource.name,
-                    data: { id: resource.resourceType + "/" + resource.id },
-                    isBatch: true,
-                  };
-
-                  nodes.push(treeNode);
-                }
-              });
-
-              if (resp.data.link != null) {
-                const next = resp.data.link.find(
-                  (element) => element.relation === "next"
-                );
-
-                if (next != null) {
-                  const treeNode = {
-                    text: "...",
-                    data: { url: next.url, node: node },
-                    isBatch: true,
-                  };
-
-                  nodes.push(treeNode);
-                }
-              }
-            }
-
-            this.items = nodes;
-            this.mode = "LIST";
           });
       }
     },
