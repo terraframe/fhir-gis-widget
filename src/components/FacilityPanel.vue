@@ -87,6 +87,8 @@ export default {
                 const hierarchyType = org.extension.filter(
                   (ext) => ext.url === "hierarchy-type"
                 )[0];
+
+                // TODO: Determine if this is a valid way to get the hierarchyType label
                 const hierarchyLabel = hierarchyType.valueCodeableConcept.text;
 
                 const partOf = org.extension.filter(

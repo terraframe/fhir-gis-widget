@@ -2,7 +2,7 @@
   <v-app id="fhir-gis-app">
     <v-container fluid>
       <v-row>
-        <v-col class="d-flex" style="height:100vh;" cols="12" sm="3">
+        <v-col class="d-flex" style="height: 100vh" cols="12" sm="3">
           <v-tabs
             v-model="tab"
             background-color="#005695"
@@ -13,14 +13,14 @@
 
             <v-tab key="Search" href="#tab-search"> Search </v-tab>
 
-            <template v-if="options.isFacility !== true">
+            <template v-if="options.isFacility || isFacility">
+              <v-tab key="Facilities" href="#tab-facility"> Locations </v-tab>
+            </template>
+            <template v-else>
               <v-tab v-if="options.root != null" key="Tree" href="#tab-tree">
                 Hierarchies
               </v-tab>
               <v-tab key="Orgs" href="#tab-org"> Organizations </v-tab>
-            </template>
-            <template v-else>
-              <v-tab key="Facilities" href="#tab-facility"> Locations </v-tab>
             </template>
 
             <v-tab-item key="Search" value="tab-search">
@@ -85,7 +85,7 @@
                 ></v-text-field>
                 <v-btn
                   id="search-button"
-                  style="margin-bottom:10px;"
+                  style="margin-bottom: 10px"
                   type="submit"
                   variant="primary"
                   v-show="!isLoading"
@@ -100,7 +100,16 @@
                 ></v-progress-circular>
               </v-form>
             </v-tab-item>
-            <template v-if="options.isFacility !== true">
+            <template v-if="options.isFacility || isFacility">
+              <v-tab-item key="Facilities" value="tab-facility">
+                <FacilityPanel
+                  :fhirServerUrl="fhirServerUrl"
+                  :options="options"
+                  v-on:select="onNodeSelected"
+                ></FacilityPanel>
+              </v-tab-item>
+            </template>
+            <template v-else>
               <v-tab-item
                 v-if="options.root != null"
                 key="Tree"
@@ -118,15 +127,6 @@
                   :options="options"
                   v-on:select="onNodeSelected"
                 ></OrganizationPanel>
-              </v-tab-item>
-            </template>
-            <template v-else>
-              <v-tab-item key="Facilities" value="tab-facility">
-                <FacilityPanel
-                  :fhirServerUrl="fhirServerUrl"
-                  :options="options"
-                  v-on:select="onNodeSelected"
-                ></FacilityPanel>
               </v-tab-item>
             </template>
           </v-tabs>
@@ -200,6 +200,7 @@ export default {
       tab: "tab-search",
       selected: null,
       isLoading: false,
+      isFacility: false,
       form: {
         selected: {
           key: "name",
@@ -292,8 +293,29 @@ export default {
     this.map.on("load", () => {
       this.initMap();
     });
+
+    // Determine if this is using MCSD facilities
+    this.hasFacilityMetadata();
   },
   methods: {
+    async hasFacilityMetadata() {
+      // Build the search URL
+      let url = this.fhirServerUrl + "/metadata";
+
+      // Get the parent
+      const response = await this.$http.get(url);
+
+      if (response.status === 200) {
+        const resource = response.data;
+
+        const result = fhirpath.evaluate(
+          resource,
+          "CapabilityStatement.rest.resource.where(profile = 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_FacilityLocation').exists()"
+        );
+
+        this.isFacility = result[0];
+      }
+    },
     onNodeSelected(node) {
       if (node.data != null && node.data.url == null) {
         this.selected = node.data.id;
@@ -358,7 +380,7 @@ export default {
       });
     },
     onSearch() {
-      if (this.options.isFacility) {
+      if (this.options.isFacility || this.isFacility) {
         this.onFacilitySearch();
       } else {
         this.onLocationSearch();
@@ -475,7 +497,10 @@ export default {
 
       // Add zoom and rotation controls to the map.
       this.map.addControl(
-        new mapboxgl.NavigationControl({ visualizePitch: false, showCompass: false }),
+        new mapboxgl.NavigationControl({
+          visualizePitch: false,
+          showCompass: false,
+        }),
         "top-right"
       );
       this.map.addControl(
@@ -1082,12 +1107,12 @@ export default {
             const organization =
               organizations[resource.managingOrganization.reference];
 
-            // const orgs = fhirpath.evaluate(
-            //   organization,
-            //   "Organization.extension.where(url = 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension').extension.where(url = 'part-of').valueReference"
-            // );
+            const orgs = fhirpath.evaluate(
+              organization,
+              "Organization.extension.where(url = 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension').extension.where(url = 'part-of').valueReference"
+            );
 
-            // console.log("Orgs", orgs);
+            console.log("Orgs", orgs);
 
             // Create the feature
             const feature = {
@@ -1204,10 +1229,9 @@ export default {
   margin-left: 5px;
 }
 
-
->>> .v-window.v-item-group.v-tabs-items{
-  overflow:auto;
-  height:calc(100% - 48px);
+>>> .v-window.v-item-group.v-tabs-items {
+  overflow: auto;
+  height: calc(100% - 48px);
   padding: 10px;
 }
 </style>
