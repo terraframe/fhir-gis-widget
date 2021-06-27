@@ -61,7 +61,7 @@ export default {
 
             if (parent.id !== "root") {
               const exp =
-                "Organization.extension.where(url = 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension')";
+                "Organization.extension('http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension')";
 
               const orgs = fhirpath.evaluate(resource, exp);
 
@@ -150,10 +150,15 @@ export default {
 
         if (node.id === "root") {
           if (this.options.orgRoot != null) {
-            params.append("_id", this.options.orgRoot);
+            if (this.options.includeRoot) {
+              params.append("_id", this.options.orgRoot);
+            } else {
+              params.append("hierarchyExtension", this.options.orgRoot);
+            }
           }
         } else {
-          params.append("partof", node.data.id);
+          // params.append("partof", node.data.id);
+          params.append("hierarchyExtension", node.data.id);
         }
 
         return this.$http
