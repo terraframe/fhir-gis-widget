@@ -12,24 +12,6 @@
         </template>
       </span>
     </LiquorTree>
-    <v-list v-if="mode === 'LIST'" dense>
-      <v-list-item
-        v-on:click="
-          mode = 'TREE';
-          items = [];
-        "
-      >
-        <FontAwesomeIcon icon="angle-double-left" />
-      </v-list-item>
-      <v-subheader> Locations managed by {{ node.text }} </v-subheader>
-      <v-list-item-group color="primary">
-        <v-list-item v-for="(item, i) in items" :key="i">
-          <v-list-item-content v-on:click="onNodeSelected(item)">
-            <v-list-item-title v-text="item.text"></v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list-item-group>
-    </v-list>
   </div>
 </template>
 

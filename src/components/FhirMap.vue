@@ -981,20 +981,21 @@ export default {
         };
 
         // Build the search URL
-        let url = this.fhirServerUrl + "/Organization";
+        let url = this.fhirServerUrl + "/Location";
 
         var params = new URLSearchParams();
 
-        // Include the Location
-        params.append("_revinclude", "Location:organization");
+        // Include the Organization
+        params.append("_include", "Location:organization");
 
         if (this.tab !== "tab-search") {
           if (this.selected != null) {
-            params.append("partof", this.selected);
+            params.append("organization.hierarchyExtension", this.selected);            
           }
 
           // Recurive include for location
-          params.append("_revinclude", "Organization:partof");
+          // TODO change this to chain off of the organization hierarchy extensions value
+          // params.append("_revinclude", "Location:partof");
         } else {
           params.append("_count", this.form.count);
 
@@ -1043,8 +1044,8 @@ export default {
             // Get the parent
             const response = await this.$http.get(url, {
               params: {
-                _id: this.selected,
-                _revinclude: "Location:organization",
+                organization: this.selected,
+                _include: "Location:organization",
               },
             });
 
@@ -1107,12 +1108,12 @@ export default {
             const organization =
               organizations[resource.managingOrganization.reference];
 
-            const orgs = fhirpath.evaluate(
-              organization,
-              "Organization.extension.where(url = 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension').extension.where(url = 'part-of').valueReference"
-            );
+            // const orgs = fhirpath.evaluate(
+            //   organization,
+            //   "Organization.extension('http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension').extension('part-of')"
+            // );
 
-            console.log("Orgs", orgs);
+            // console.log("Orgs", orgs);
 
             // Create the feature
             const feature = {
