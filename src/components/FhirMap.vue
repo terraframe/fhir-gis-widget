@@ -515,7 +515,7 @@ export default {
           const feature = features[0];
 
           let html = "<div>";
-          html += "<h3> " + feature.properties.name + "</h3>";
+          html += "<h2> " + feature.properties.name + "</h2>";
           html += "<hr/>";
           html += "<ul>";
 
@@ -550,8 +550,29 @@ export default {
               html += "</li>";
             });
           }
-
           html += "</ul>";
+
+          if (feature.properties["_services"] != null) {
+            let services = null;
+
+            try {
+              services = JSON.parse(feature.properties["_services"]);
+            } catch (e) {
+              // Do nothing
+            }
+
+            if (services != null && services.length > 0) {
+              html += "<hr/>";
+              html += "<h4>Services</h4>";
+
+              html += "<ul>";
+              services.forEach((v) => {
+                html += "<li>" + v + "</li>";
+              });
+              html += "</ul>";
+            }
+          }
+
           html += "</div>";
 
           new mapboxgl.Popup({ closeOnClick: true, closeButton: false })
@@ -988,9 +1009,14 @@ export default {
         // Include the Organization
         params.append("_include", "Location:organization");
 
+        // Include the services
+        params.append("_revinclude", "HealthcareService:location");
+
         if (this.tab !== "tab-search") {
+          params.append("_count", 300);
+
           if (this.selected != null) {
-            params.append("organization.hierarchyExtension", this.selected);            
+            params.append("organization.hierarchyExtension", this.selected);
           }
 
           // Recurive include for location
@@ -1030,6 +1056,28 @@ export default {
         // Create the feature collection from the FHIR response
         this.collection = this.createFacilityCollection(response.data);
 
+        if (this.tab !== "tab-search") {
+          let links = fhirpath.evaluate(
+            response.data,
+            "Bundle.link.where(relation = 'next').url"
+          );
+
+          while (links.length > 0) {
+            const response = await this.$http.get(links[0], {});
+
+            const page = this.createFacilityCollection(response.data);
+
+            this.collection.features = this.collection.features.concat(page.features);
+
+            links = fhirpath.evaluate(
+              response.data,
+              "Bundle.link.where(relation = 'next').url"
+            );
+          }
+
+          // features = features.concat(page.features);
+        }
+
         // Update the map results
         this.map.getSource("locations").setData(this.collection);
 
@@ -1046,6 +1094,7 @@ export default {
               params: {
                 organization: this.selected,
                 _include: "Location:organization",
+                _revinclude: "HealthcareService:location",
               },
             });
 
@@ -1081,110 +1130,107 @@ export default {
     createFacilityCollection(payload) {
       let features = [];
 
-      if (payload.entry) {
-        // First load all Organizations into a map which will be used when populating the Features from the Location resource
-        const organizations = {};
+      const locations = fhirpath.evaluate(
+        payload,
+        "Bundle.entry.resource.ofType(Location)"
+      );
 
-        payload.entry.forEach((entry) => {
-          const resource = entry.resource;
+      locations.forEach((resource) => {
+        let hasGeojsonExtension = false;
 
-          if (resource.resourceType === "Organization") {
-            const key = resource.resourceType + "/" + resource.id;
+        if (resource.managingOrganization != null) {
+          const orgExpression =
+            "Bundle.entry.resource.ofType(Organization).where(id = '" +
+            resource.managingOrganization.reference.replace(
+              "Organization/",
+              ""
+            ) +
+            "')";
 
-            organizations[key] = resource;
-          }
-        });
+          const organization = fhirpath.evaluate(payload, orgExpression)[0];
 
-        // Second process the Location resources
-        payload.entry.forEach((entry) => {
-          let hasGeojsonExtension = false;
-
-          const resource = entry.resource;
+          // Create the feature
+          const feature = {
+            type: "Feature",
+            properties: {
+              name: organization.name || "",
+            },
+          };
 
           if (
-            resource.resourceType === "Location" &&
-            resource.managingOrganization != null
+            this.options.attributes != null &&
+            this.options.attributes.length > 0
           ) {
-            const organization =
-              organizations[resource.managingOrganization.reference];
+            this.options.attributes.forEach((attribute) => {
+              const value = fhirpath.evaluate(resource, attribute.expression);
 
-            // const orgs = fhirpath.evaluate(
-            //   organization,
-            //   "Organization.extension('http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension').extension('part-of')"
-            // );
-
-            // console.log("Orgs", orgs);
-
-            // Create the feature
-            const feature = {
-              type: "Feature",
-              properties: {
-                name: organization.name || "",
-              },
-            };
-
-            if (
-              this.options.attributes != null &&
-              this.options.attributes.length > 0
-            ) {
-              this.options.attributes.forEach((attribute) => {
-                const value = fhirpath.evaluate(resource, attribute.expression);
-
-                if (organization != null) {
-                  value.concat(
-                    fhirpath.evaluate(organization, attribute.expression)
-                  );
-                }
-
-                feature.properties[attribute.name] = value;
-              });
-            }
-
-            // Get the geojson if it exists
-            const result = fhirpath.evaluate(
-              resource,
-              "Location.extension.where(url = 'http://hl7.org/fhir/StructureDefinition/location-boundary-geojson').valueAttachment.data"
-            );
-
-            if (result.length > 0) {
-              try {
-                const data = result[0];
-
-                if (data) {
-                  const geometry = JSON.parse(window.atob(data));
-
-                  feature.geometry = geometry;
-
-                  hasGeojsonExtension = true;
-                }
-              } catch (e) {
-                hasGeojsonExtension = false;
+              if (organization != null) {
+                value.concat(
+                  fhirpath.evaluate(organization, attribute.expression)
+                );
               }
-            }
 
-            // Else fall back on the position data if it exists, otherwise do
-            // not map the location
-            if (
-              !hasGeojsonExtension &&
-              resource.position != null &&
-              resource.position.longitude != null &&
-              resource.position.latitude != null
-            ) {
-              feature.geometry = {
-                type: "Point",
-                coordinates: [
-                  resource.position.longitude,
-                  resource.position.latitude,
-                ],
-              };
-            }
+              feature.properties[attribute.name] = value;
+            });
+          }
 
-            if (feature.geometry != null) {
-              features.push(feature);
+          // Add the list of services to the feature properties
+          const expression =
+            "Bundle.entry.resource.ofType(HealthcareService).where(location.reference contains '" +
+            resource.resourceType +
+            "/" +
+            resource.id +
+            "').name";
+
+          feature.properties["_services"] = fhirpath.evaluate(
+            payload,
+            expression
+          );
+
+          // Get the geojson if it exists
+          const result = fhirpath.evaluate(
+            resource,
+            "Location.extension.where(url = 'http://hl7.org/fhir/StructureDefinition/location-boundary-geojson').valueAttachment.data"
+          );
+
+          if (result.length > 0) {
+            try {
+              const data = result[0];
+
+              if (data) {
+                const geometry = JSON.parse(window.atob(data));
+
+                feature.geometry = geometry;
+
+                hasGeojsonExtension = true;
+              }
+            } catch (e) {
+              hasGeojsonExtension = false;
             }
           }
-        });
-      }
+
+          // Else fall back on the position data if it exists, otherwise do
+          // not map the location
+          if (
+            !hasGeojsonExtension &&
+            resource.position != null &&
+            resource.position.longitude != null &&
+            resource.position.latitude != null
+          ) {
+            feature.geometry = {
+              type: "Point",
+              coordinates: [
+                resource.position.longitude,
+                resource.position.latitude,
+              ],
+            };
+          }
+
+          if (feature.geometry != null) {
+            features.push(feature);
+          }
+        }
+      });
 
       return { type: "FeatureCollection", features: features };
     },

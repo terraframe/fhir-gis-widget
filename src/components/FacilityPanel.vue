@@ -65,6 +65,8 @@ export default {
 
               const orgs = fhirpath.evaluate(resource, exp);
 
+              const labels = [];
+
               orgs.forEach((org) => {
                 const hierarchyType = org.extension.filter(
                   (ext) => ext.url === "hierarchy-type"
@@ -79,15 +81,19 @@ export default {
                 const reference = partOf.valueReference.reference;
 
                 if (reference === parent.data.id) {
-                  const treeNode = {
-                    text: resource.name + " (" + hierarchyLabel + ")",
-                    data: { id: resource.resourceType + "/" + resource.id },
-                    isBatch: true,
-                  };
-
-                  nodes.push(treeNode);
+                  labels.push(hierarchyLabel);
                 }
               });
+
+              if (labels.length > 0) {
+                const treeNode = {
+                  text: resource.name + " (" + labels.join(', ') + ")",
+                  data: { id: resource.resourceType + "/" + resource.id },
+                  isBatch: true,
+                };
+
+                nodes.push(treeNode);
+              }
             } else {
               const treeNode = {
                 text: resource.name,
