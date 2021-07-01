@@ -257,6 +257,7 @@ export default {
       locations: [],
       mode: "ORG",
       orgs: [],
+      sequence: 0,
     };
   },
   watch: {
@@ -995,6 +996,7 @@ export default {
     async onFacilitySearch() {
       try {
         this.isLoading = true;
+        this.sequence++;
 
         this.parents = {
           type: "FeatureCollection",
@@ -1013,7 +1015,7 @@ export default {
         params.append("_revinclude", "HealthcareService:location");
 
         if (this.tab !== "tab-search") {
-          params.append("_count", 300);
+          // params.append("_count", 300);
 
           if (this.selected != null) {
             params.append("organization.hierarchyExtension", this.selected);
@@ -1057,25 +1059,7 @@ export default {
         this.collection = this.createFacilityCollection(response.data);
 
         if (this.tab !== "tab-search") {
-          let links = fhirpath.evaluate(
-            response.data,
-            "Bundle.link.where(relation = 'next').url"
-          );
-
-          while (links.length > 0) {
-            const response = await this.$http.get(links[0], {});
-
-            const page = this.createFacilityCollection(response.data);
-
-            this.collection.features = this.collection.features.concat(page.features);
-
-            links = fhirpath.evaluate(
-              response.data,
-              "Bundle.link.where(relation = 'next').url"
-            );
-          }
-
-          // features = features.concat(page.features);
+          this.handleFacilityLink(response, this.sequence);
         }
 
         // Update the map results
@@ -1125,6 +1109,32 @@ export default {
         console.log(err);
       } finally {
         this.isLoading = false;
+      }
+    },
+    async handleFacilityLink(response, sequence) {
+      let links = fhirpath.evaluate(
+        response.data,
+        "Bundle.link.where(relation = 'next').url"
+      );
+
+      while (links.length > 0 && sequence === this.sequence) {
+        const response = await this.$http.get(links[0], {});
+
+        if (sequence === this.sequence) {
+          const page = this.createFacilityCollection(response.data);
+
+          this.collection.features = this.collection.features.concat(
+            page.features
+          );
+
+          // Update the map results
+          this.map.getSource("locations").setData(this.collection);
+        }
+
+        links = fhirpath.evaluate(
+          response.data,
+          "Bundle.link.where(relation = 'next').url"
+        );
       }
     },
     createFacilityCollection(payload) {
