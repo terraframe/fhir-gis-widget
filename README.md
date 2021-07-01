@@ -53,17 +53,13 @@ html {
 }
 </style>
 ```
-fhir-gis-widget is dependent upon both Vuetify and Axios being global dependencies.  In your main.js you must include the declaration of both:
+fhir-gis-widget is dependent upon both Vuetify being defined as a global dependencies.  In your main.js you must include the declaration of both:
 
 ```
 import Vue from 'vue'
 
 import App from './App.vue'
 import vuetify from './plugins/vuetify'
-import axios from 'axios'
-import VueAxios from 'vue-axios'
-
-Vue.use(VueAxios, axios)
 
 new Vue({
   vuetify,
@@ -82,6 +78,8 @@ new Vue({
 		-11.84389		
 	],
 	"zoom": 3,
+	"isFacility" : true,
+	"orgRoot": 1,
 	"root": 1352,
 	"includeRoot": true,
 	"contextServices": [],
@@ -99,17 +97,17 @@ new Vue({
 		{
 			"name": "identifier",
 			"label": "Identifiers",
-			"jspath": ".identifier.value"
+			"expression": "Location.identifier.value"
 		},
 		{
 			"name": "description",
 			"label": "Description",
-			"jspath": ".description[0]"
+			"expression": "Location.description.single()"
 		},
 		{
 			"name": "status",
 			"label": "Status",
-			"jspath": ".status[0]"
+			"expression": "Location.status.single()"
 		}
 	],
 	"locationStyles": {
@@ -134,12 +132,14 @@ new Vue({
 ## Config Parameters
 - center: Default point to use when loading the map
 - zoom: Default zoom level to use when loading the map
+- isFacility: Flag denoting if the FHIR data represent MCSD Facility Locations. If this is set to true the widget expects the MCSD Hierarchy Extension has a SearchParameter definition called hierarchyExtension defined on the Organization resource.  The widget will also search for the presence of the metadata profile 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_FacilityLocation' to automatically determine this value.
 - root: Id of the FHIR Location resource to use as the root node of the Hierarchies tree.  If a root value is not specified then the Hierarchies panel will be hidden
+- orgRoot: Id of the FHIR Organization resrouce to use as the root node of the Organization tree.  If the widget is using MCSD facilities this would be the root Facility Organization
 - includeRoot: Flag indicating if the Hierarchies panel should include the root node, or just children of the root node.
 - contextServices: List of services which provide extra context layers for the map.  Currently supports geoserver WMS context layers as well as CGR vector tile layers.  See further below for more details about configuring context layer services.
 - searchParameters: List of custom search parameters not provided by the widget which can be used to restrict the map results. See further below for more details about configuring search parameters.
 - filters: List of global filters to use when restricting all Location results.  Expecting an object with 'name' and 'value' properties.  Such as the following: {'name':'idenitifier', 'value' : 'XXX-YYY-ZZZ'}
-- attributes: List of attributes/value pairs which should appear in the pop-up modal.   Uses jspath (https://www.npmjs.com/package/jspath) to get the values out of the Location resource JSON object
+- attributes: List of attributes/value pairs which should appear in the pop-up modal.   Uses Fhirpath (http://hl7.org/fhirpath/) to get the values out of the resource JSON object.  When being used in the MCSD facility mode the resources which can be queried for values are the Organization, Location, and HealthcareService pairings.
 - locationStyles : Mapbox-gl paint definition (https://docs.mapbox.com/mapbox-gl-js/style-spec/layers/) to use for the Location layer on the map.
 - selectedStyles : Mapbox-gl paint definition (https://docs.mapbox.com/mapbox-gl-js/style-spec/layers/) to use for the selected location layer on the map.
 
