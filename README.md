@@ -139,7 +139,7 @@ new Vue({
 - contextServices: List of services which provide extra context layers for the map.  Currently supports geoserver WMS context layers as well as CGR vector tile layers.  See further below for more details about configuring context layer services.
 - searchParameters: List of custom search parameters not provided by the widget which can be used to restrict the map results. See further below for more details about configuring search parameters.
 - filters: List of global filters to use when restricting all Location results.  Expecting an object with 'name' and 'value' properties.  Such as the following: {'name':'idenitifier', 'value' : 'XXX-YYY-ZZZ'}
-- attributes: List of attributes/value pairs which should appear in the pop-up modal.   Uses Fhirpath (http://hl7.org/fhirpath/) to get the values out of the resource JSON object.  When being used in the MCSD facility mode the resources which can be queried for values are the Organization, Location, and HealthcareService pairings.
+- attributes: List of attributes/value pairs which should appear in the pop-up modal.   Uses Fhirpath (http://hl7.org/fhirpath/) to get the values out of the resource JSON object.  When being used in the MCSD facility mode the Organization and Location resources can be queried for values.
 - locationStyles : Mapbox-gl paint definition (https://docs.mapbox.com/mapbox-gl-js/style-spec/layers/) to use for the Location layer on the map.
 - selectedStyles : Mapbox-gl paint definition (https://docs.mapbox.com/mapbox-gl-js/style-spec/layers/) to use for the selected location layer on the map.
 
