@@ -3,22 +3,15 @@
 		8.521441,
 		-11.84389
 	],
-	"isFacility" : true,
+	"isFacility": true,
 	"zoom": 3,
-	"root": 1360,
+	"root": 1359,
+	"orgRoot": "1",
 	"includeRoot": true,
-	"orgRoot": 2,
 	"contextServices": [],
-	"searchParameters": [
-		{
-			"key": "physicalType",
-			"system": false,
-			"label": "Physical Type",
-			"placeholder": "Physical Type..",
-			"options": []
-		}
-	],
+	"searchParameters": [],
 	"filters": [],
+	"searchOnLoad":true,
 	"attributes": [
 		{
 			"name": "identifier",

@@ -13,7 +13,7 @@
 
             <v-tab key="Search" href="#tab-search"> Search </v-tab>
 
-            <template v-if="options.isFacility || isFacility">
+            <template v-if="options.isFacility || (options.isFacility == null && isFacility)">
               <v-tab key="Facilities" href="#tab-facility"> Locations </v-tab>
             </template>
             <template v-else>
@@ -100,7 +100,7 @@
                 ></v-progress-circular>
               </v-form>
             </v-tab-item>
-            <template v-if="options.isFacility || isFacility">
+            <template v-if="options.isFacility || (this.options.isFacility == null && this.isFacility)">
               <v-tab-item key="Facilities" value="tab-facility">
                 <FacilityPanel
                   :fhirServerUrl="fhirServerUrl"
@@ -381,7 +381,7 @@ export default {
       });
     },
     onSearch() {
-      if (this.options.isFacility || this.isFacility) {
+      if (this.options.isFacility || (this.options.isFacility == null && this.isFacility)) {
         this.onFacilitySearch();
       } else {
         this.onLocationSearch();
@@ -582,6 +582,10 @@ export default {
             .addTo(this.map);
         }
       });
+
+      if(this.options.searchOnLoad) {
+        this.onSearch();
+      }
     },
     onChangeBaseLayer(layer) {
       if (layer.type === "mapbox") {
