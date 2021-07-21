@@ -77,6 +77,7 @@ new Vue({
 		8.521441,
 		-11.84389		
 	],
+	"searchOnLoad" : true	
 	"zoom": 3,
 	"isFacility" : true,
 	"orgRoot": 1,
@@ -132,7 +133,8 @@ new Vue({
 ## Config Parameters
 - center: Default point to use when loading the map
 - zoom: Default zoom level to use when loading the map
-- isFacility: Flag denoting if the FHIR data represent MCSD Facility Locations. If this is set to true the widget expects the MCSD Hierarchy Extension has a SearchParameter definition called hierarchyExtension defined on the Organization resource.  The widget will also search for the presence of the metadata profile 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_FacilityLocation' to automatically determine this value.
+- searchOnLoad : Automatically loads the first set of locations in FHIR and zooms to them when the map loads.
+- isFacility: Flag denoting if the FHIR data represent MCSD Facility Locations. If this is set to true the widget expects the MCSD Hierarchy Extension has a SearchParameter definition called hierarchyExtension defined on the Organization resource.  The expected FHIR expression on the search parameter is: Organization.extension('http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension').extension('part-of').  The widget will also search for the presence of the metadata profile 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_FacilityLocation' to automatically determine this value.  If isFacility is set to false it will take precedent over the derived value from the metadata.
 - root: Id of the FHIR Location resource to use as the root node of the Hierarchies tree.  If a root value is not specified then the Hierarchies panel will be hidden
 - orgRoot: Id of the FHIR Organization resrouce to use as the root node of the Organization tree.  If the widget is using MCSD facilities this would be the root Facility Organization
 - includeRoot: Flag indicating if the Hierarchies panel should include the root node, or just children of the root node.
