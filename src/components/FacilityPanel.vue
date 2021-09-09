@@ -61,7 +61,7 @@ export default {
 
             if (parent.id !== "root") {
               const exp =
-                "Organization.extension('http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension')";
+                "Organization.extension('" + this.options.hierarchyExtension.url +"')";
 
               const orgs = fhirpath.evaluate(resource, exp);
 
@@ -72,8 +72,16 @@ export default {
                   (ext) => ext.url === "hierarchy-type"
                 )[0];
 
-                // TODO: Determine if this is a valid way to get the hierarchyType label
-                const hierarchyLabel = hierarchyType.valueCodeableConcept.text;
+                let hierarchyLabel = hierarchyType.valueCodeableConcept.text;
+
+                // Just fallback to the first coding text
+                if (
+                  hierarchyLabel == null &&
+                  hierarchyType.valueCodeableConcept.coding != null &&
+                  hierarchyType.valueCodeableConcept.coding.length > 0
+                ) {
+                  hierarchyLabel = hierarchyType.valueCodeableConcept.coding[0].display;
+                }
 
                 const partOf = org.extension.filter(
                   (ext) => ext.url === "part-of"
@@ -87,7 +95,7 @@ export default {
 
               if (labels.length > 0) {
                 const treeNode = {
-                  text: resource.name + " (" + labels.join(', ') + ")",
+                  text: resource.name + " (" + labels.join(", ") + ")",
                   data: { id: resource.resourceType + "/" + resource.id },
                   isBatch: true,
                 };
@@ -159,12 +167,12 @@ export default {
             if (this.options.includeRoot) {
               params.append("_id", this.options.orgRoot);
             } else {
-              params.append("hierarchyExtension", this.options.orgRoot);
+              params.append(this.options.hierarchyExtension.parameter, this.options.orgRoot);
             }
           }
         } else {
           // params.append("partof", node.data.id);
-          params.append("hierarchyExtension", node.data.id);
+          params.append(this.options.hierarchyExtension.parameter, node.data.id);
         }
 
         return this.$http
