@@ -4,14 +4,18 @@
 		-11.84389
 	],
 	"isFacility": true,
+	"hierarchyExtension": {
+		"url": "http://gofr.org/fhir/StructureDefinition/GOFR.IHE.mCSD.OrganizationHierarchy",
+		"parameter": "ihe-mcsd-hierarchy-partof"
+	},
 	"zoom": 3,
 	"root": 1359,
-	"orgRoot": "1",
+	"orgRoot": "8",
 	"includeRoot": true,
 	"contextServices": [],
 	"searchParameters": [],
 	"filters": [],
-	"searchOnLoad":true,
+	"searchOnLoad": true,
 	"attributes": [
 		{
 			"name": "identifier",

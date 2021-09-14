@@ -201,9 +201,9 @@ export default {
           searchParameters: [],
           filters: [],
           hierarchyExtension: {
-            url: "http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension",
+            url: "http://ihe.net/fhir/StructureDefinition/IHE.mCSD.hierarchy.extension",
             parameter: "hierarchyExtension",
-          }
+          },
         };
       },
     },
@@ -324,7 +324,7 @@ export default {
 
         const result = fhirpath.evaluate(
           resource,
-          "CapabilityStatement.rest.resource.where(profile = 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_FacilityLocation').exists()"
+          "CapabilityStatement.rest.resource.where(profile = 'http://ihe.net/fhir/StructureDefinition/IHE.mCSD.FacilityLocation').exists()"
         );
 
         this.isFacility = result[0];
@@ -766,8 +766,6 @@ export default {
 
       if (payload.entry) {
         payload.entry.forEach((entry) => {
-          let hasGeojsonExtension = false;
-
           const resource = entry.resource;
 
           // Create the feature
@@ -790,43 +788,7 @@ export default {
           }
 
           // Use geojson if exists
-          const result = fhirpath.evaluate(
-            resource,
-            "Location.extension.where(url = 'http://hl7.org/fhir/StructureDefinition/location-boundary-geojson').valueAttachment.data"
-          );
-
-          if (result.length > 0) {
-            try {
-              const data = result[0];
-
-              if (data) {
-                const geometry = JSON.parse(window.atob(data));
-
-                feature.geometry = geometry;
-
-                hasGeojsonExtension = true;
-              }
-            } catch (e) {
-              hasGeojsonExtension = false;
-            }
-          }
-
-          // Else fall back on the position data if it exists, otherwise do
-          // not map the location
-          if (
-            !hasGeojsonExtension &&
-            resource.position != null &&
-            resource.position.longitude != null &&
-            resource.position.latitude != null
-          ) {
-            feature.geometry = {
-              type: "Point",
-              coordinates: [
-                resource.position.longitude,
-                resource.position.latitude,
-              ],
-            };
-          }
+          feature.geometry = this.parseGeoJson(resource);
 
           if (feature.geometry != null) {
             features.push(feature);
@@ -1038,7 +1000,10 @@ export default {
           // params.append("_count", 300);
 
           if (this.selected != null) {
-            params.append("organization.hierarchyExtension", this.selected);
+            params.append(
+              "organization." + this.options.hierarchyExtension.parameter,
+              this.selected
+            );
           }
 
           // Recurive include for location
@@ -1166,8 +1131,6 @@ export default {
       );
 
       locations.forEach((resource) => {
-        let hasGeojsonExtension = false;
-
         if (resource.managingOrganization != null) {
           const orgExpression =
             "Bundle.entry.resource.ofType(Organization).where(id = '" +
@@ -1218,43 +1181,7 @@ export default {
           );
 
           // Get the geojson if it exists
-          const result = fhirpath.evaluate(
-            resource,
-            "Location.extension.where(url = 'http://hl7.org/fhir/StructureDefinition/location-boundary-geojson').valueAttachment.data"
-          );
-
-          if (result.length > 0) {
-            try {
-              const data = result[0];
-
-              if (data) {
-                const geometry = JSON.parse(window.atob(data));
-
-                feature.geometry = geometry;
-
-                hasGeojsonExtension = true;
-              }
-            } catch (e) {
-              hasGeojsonExtension = false;
-            }
-          }
-
-          // Else fall back on the position data if it exists, otherwise do
-          // not map the location
-          if (
-            !hasGeojsonExtension &&
-            resource.position != null &&
-            resource.position.longitude != null &&
-            resource.position.latitude != null
-          ) {
-            feature.geometry = {
-              type: "Point",
-              coordinates: [
-                resource.position.longitude,
-                resource.position.latitude,
-              ],
-            };
-          }
+          feature.geometry = this.parseGeoJson(resource);
 
           if (feature.geometry != null) {
             features.push(feature);
@@ -1263,6 +1190,43 @@ export default {
       });
 
       return { type: "FeatureCollection", features: features };
+    },
+    parseGeoJson(resource) {
+      // Get the geojson if it exists
+      const result = fhirpath.evaluate(
+        resource,
+        "Location.extension.where(url = 'http://hl7.org/fhir/StructureDefinition/location-boundary-geojson').valueAttachment.data"
+      );
+
+      if (result.length > 0) {
+        try {
+          const data = result[0];
+
+          if (data) {
+            return JSON.parse(window.atob(data));
+          }
+        } catch (e) {
+          // Swallow the error
+        }
+      }
+
+      // Else fall back on the position data if it exists, otherwise do
+      // not map the location
+      if (
+        resource.position != null &&
+        resource.position.longitude != null &&
+        resource.position.latitude != null
+      ) {
+        return {
+          type: "Point",
+          coordinates: [
+            resource.position.longitude,
+            resource.position.latitude,
+          ],
+        };
+      }
+
+      return null;
     },
   },
 };

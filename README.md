@@ -80,6 +80,10 @@ new Vue({
 	"searchOnLoad" : true	
 	"zoom": 3,
 	"isFacility" : true,
+	"hierarchyExtension": {
+		"url": "http://gofr.org/fhir/StructureDefinition/GOFR.IHE.mCSD.OrganizationHierarchy",
+		"parameter": "ihe-mcsd-hierarchy-partof"
+	},
 	"orgRoot": 1,
 	"root": 1352,
 	"includeRoot": true,
@@ -134,7 +138,10 @@ new Vue({
 - center: Default point to use when loading the map
 - zoom: Default zoom level to use when loading the map
 - searchOnLoad : Automatically loads the first set of locations in FHIR and zooms to them when the map loads.
-- isFacility: Flag denoting if the FHIR data represent MCSD Facility Locations. If this is set to true the widget expects the MCSD Hierarchy Extension has a SearchParameter definition called hierarchyExtension defined on the Organization resource.  The expected FHIR expression on the search parameter is: Organization.extension('http://ihe.net/fhir/StructureDefinition/IHE_mCSD_hierarchy_extension').extension('part-of').  The widget will also search for the presence of the metadata profile 'http://ihe.net/fhir/StructureDefinition/IHE_mCSD_FacilityLocation' to automatically determine this value.  If isFacility is set to false it will take precedent over the derived value from the metadata.
+- isFacility: Flag denoting if the FHIR data represent MCSD Facility Locations. If this is set to true the widget expects the MCSD Hierarchy Extension has a SearchParameter definition called hierarchyExtension defined on the Organization resource.  The expected FHIR expression on the search parameter is: Organization.extension('http://ihe.net/fhir/StructureDefinition/IHE.mCSD.hierarchy.extension').extension('part-of').  The widget will also search for the presence of the metadata profile 'http://ihe.net/fhir/StructureDefinition/IHE.mCSD.FacilityLocation' to automatically determine this value.  If isFacility is set to false it will take precedent over the derived value from the metadata.
+- hierarchyExension
+  - url: The url of the extension the widget should use to get the hierarchy information.  If not specified this value defaults to: 'http://ihe.net/fhir/StructureDefinition/IHE.mCSD.hierarchy.extension'
+  - parameter: The name of the search parameter defined on the FHIR server to use when querying for the hierarchy 'part-of' information.  If not specified this value defaults to: 'hierarchyExtension' 
 - root: Id of the FHIR Location resource to use as the root node of the Hierarchies tree.  If a root value is not specified then the Hierarchies panel will be hidden
 - orgRoot: Id of the FHIR Organization resrouce to use as the root node of the Organization tree.  If the widget is using MCSD facilities this would be the root Facility Organization
 - includeRoot: Flag indicating if the Hierarchies panel should include the root node, or just children of the root node.
