@@ -61,7 +61,9 @@ export default {
 
             if (parent.id !== "root") {
               const exp =
-                "Organization.extension('" + this.options.hierarchyExtension.url +"')";
+                "Organization.extension('" +
+                this.options.hierarchyExtension.url +
+                "')";
 
               const orgs = fhirpath.evaluate(resource, exp);
 
@@ -80,7 +82,8 @@ export default {
                   hierarchyType.valueCodeableConcept.coding != null &&
                   hierarchyType.valueCodeableConcept.coding.length > 0
                 ) {
-                  hierarchyLabel = hierarchyType.valueCodeableConcept.coding[0].display;
+                  hierarchyLabel =
+                    hierarchyType.valueCodeableConcept.coding[0].display;
                 }
 
                 const partOf = org.extension.filter(
@@ -167,12 +170,23 @@ export default {
             if (this.options.includeRoot) {
               params.append("_id", this.options.orgRoot);
             } else {
-              params.append(this.options.hierarchyExtension.parameter, this.options.orgRoot);
+              params.append(
+                this.options.hierarchyExtension.parameter,
+                this.options.orgRoot
+              );
             }
+          } else {
+            params.append(
+              this.options.hierarchyExtension.parameter + ":missing",
+              true
+            );
           }
         } else {
           // params.append("partof", node.data.id);
-          params.append(this.options.hierarchyExtension.parameter, node.data.id);
+          params.append(
+            this.options.hierarchyExtension.parameter,
+            node.data.id
+          );
         }
 
         return this.$http

@@ -5,12 +5,10 @@
 	],
 	"isFacility": true,
 	"hierarchyExtension": {
-		"url": "http://gofr.org/fhir/StructureDefinition/GOFR.IHE.mCSD.OrganizationHierarchy",
-		"parameter": "ihe-mcsd-hierarchy-partof"
+		"url": "http://ihe.net/fhir/StructureDefinition/IHE.mCSD.hierarchy.extension",
+		"parameter": "hierarchyExtension"
 	},
 	"zoom": 3,
-	"root": 1359,
-	"orgRoot": "8",
 	"includeRoot": true,
 	"contextServices": [],
 	"searchParameters": [],

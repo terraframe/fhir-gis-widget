@@ -131,14 +131,16 @@ export default {
         // First build the search URL
         let url = this.fhirServerUrl + "/Organization";
 
-        const params = {};
+        var params = new URLSearchParams();
 
         if (node.id === "root") {
           if (this.options.orgRoot != null) {
-            params["_id"] = this.options.orgRoot;
+            params.append("_id", this.options.orgRoot);
+          } else {
+            params.append("partof:missing", true);
           }
         } else {
-          params.partof = node.data.id;
+          params.append("partof", node.data.id);
         }
 
         return this.$http

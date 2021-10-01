@@ -142,18 +142,20 @@ export default {
         // First build the search URL
         let url = this.fhirServerUrl + "/Location";
 
-        const params = {};
+        var params = new URLSearchParams();
 
         if (node.id === "root") {
           if (this.options.root != null) {
             if (this.options.includeRoot) {
-              params["_id"] = this.options.root;
+              params.append("_id", this.options.root);
             } else {
-              params.partof = "Location/" + this.options.root;
+              params.append('partof', this.options.root);
             }
+          } else {
+            params.append("partof:missing", true);
           }
         } else {
-          params.partof = node.data.id;
+          params.append("partof", node.data.id);          
         }
 
         return this.$http

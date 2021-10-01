@@ -21,7 +21,7 @@
               <v-tab key="Facilities" href="#tab-facility"> Locations </v-tab>
             </template>
             <template v-else>
-              <v-tab v-if="options.root != null" key="Tree" href="#tab-tree">
+              <v-tab key="Tree" href="#tab-tree">
                 Hierarchies
               </v-tab>
               <v-tab key="Orgs" href="#tab-org"> Organizations </v-tab>
@@ -120,7 +120,6 @@
             </template>
             <template v-else>
               <v-tab-item
-                v-if="options.root != null"
                 key="Tree"
                 value="tab-tree"
               >
