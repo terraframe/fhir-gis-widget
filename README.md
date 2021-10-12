@@ -143,7 +143,7 @@ new Vue({
   - url: The url of the extension the widget should use to get the hierarchy information.  If not specified this value defaults to: 'http://ihe.net/fhir/StructureDefinition/IHE.mCSD.hierarchy.extension'
   - parameter: The name of the search parameter defined on the FHIR server to use when querying for the hierarchy 'part-of' information.  If not specified this value defaults to: 'hierarchyExtension' 
 - root: Id of the FHIR Location resource to use as the root node of the Hierarchies tree.  If a root value is not specified then the Hierarchies panel will be hidden
-- orgRoot: Id of the FHIR Organization resrouce to use as the root node of the Organization tree.  If the widget is using MCSD facilities this would be the root Facility Organization
+- orgRoot: Id of the FHIR Organization resrouce to use as the root node of the Organization tree.  If the widget is using MCSD facilities this would be the root Facility Organization.  If this property is not provided the widget will make a :missing criteria query to the server for all Organizations which do not have a parent specified and assume they should be used as root nodes.
 - includeRoot: Flag indicating if the Hierarchies panel should include the root node, or just children of the root node.
 - contextServices: List of services which provide extra context layers for the map.  Currently supports geoserver WMS context layers as well as CGR vector tile layers.  See further below for more details about configuring context layer services.
 - searchParameters: List of custom search parameters not provided by the widget which can be used to restrict the map results. See further below for more details about configuring search parameters.

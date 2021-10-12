@@ -1,6 +1,6 @@
 {
   "name": "@terraframe/fhir-gis-widget",
-  "version": "0.0.2-alpha",
+  "version": "0.0.4-alpha",
   "author": "jsmethie",
   "license": "Apache-2.0",
   "main": "dist/fhir-gis-widget.umd.min.js",
